@@ -43,11 +43,13 @@ public class PedidoController {
         return ResponseEntity.ok(pedidos);
     }
 
-    @PatchMapping("/{idPedido}/estado")
+    @PutMapping("/{idPedido}/estado")
     public ResponseEntity<PedidoResponseDTO> cambiarEstadoPedido(
             @PathVariable Long idPedido,
             @RequestBody CambiarEstadoPedidoRequestDTO request) {
-        PedidoResponseDTO response = pedidoService.cambiarEstadoPedido(idPedido, request.getNuevoEstado(), request.getUsuarioResponsable(), request.getObservacion());
+        System.out.println("MS_PEDIDOS -> PUT cambiar estado ID: " + idPedido);
+        System.out.println("MS_PEDIDOS -> Request estado: " + request.getEstado());
+        PedidoResponseDTO response = pedidoService.cambiarEstadoPedido(idPedido, request.getEstado(), request.getUsuarioResponsable(), request.getObservacion());
         return ResponseEntity.ok(response);
     }
 

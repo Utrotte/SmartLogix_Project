@@ -35,11 +35,18 @@ export interface Existencia {
   idProducto: number
   idBodega: number
   nombreProducto?: string
+  codigoSkuProducto?: string
   nombreBodega?: string
-  cantidadDisponible: number
-  cantidadReservada: number
-  cantidadMínima: number
-  precioUnitario?: number
+  // Campos que devuelve el backend (ms_inventario → ExistenciaResponse)
+  stockActual: number
+  stockReservado: number
+  stockDisponible: number
+  stockMinimo: number
+  fechaActualizacion?: string
+  // Aliases de compatibilidad (algunos componentes aún los usan)
+  cantidadDisponible?: number
+  cantidadReservada?: number
+  cantidadMínima?: number
 }
 
 export interface CrearExistenciaRequest {
@@ -81,9 +88,12 @@ export interface ExistenciaResponse {
   idExistencia: number
   idProducto: number
   idBodega: number
+  codigoSkuProducto?: string
   nombreProducto: string
   nombreBodega: string
-  cantidadDisponible: number
-  cantidadReservada: number
-  cantidadMínima: number
+  stockActual: number
+  stockReservado: number
+  stockDisponible: number
+  stockMinimo: number
+  fechaActualizacion?: string
 }

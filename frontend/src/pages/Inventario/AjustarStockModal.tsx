@@ -13,22 +13,52 @@ export default function AjustarStockModal({
   onClose,
   onSuccess,
 }: AjustarStockModalProps) {
-  const [ajuste, setAjuste] = useState<number | string>('')
+  const [ajusteInput, setAjusteInput] = useState<string>('')
   const [observacion, setObservacion] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Valores seguros del stock actual (el backend devuelve stockActual, no cantidadDisponible)
+  const stockActualSeguro = Number(existencia.stockActual ?? existencia.cantidadDisponible ?? 0)
+  const stockMinimoSeguro = Number(existencia.stockMinimo ?? existencia.cantidadMínima ?? 0)
+
+  // Calcular nuevo stock para mostrar en tiempo real
+  const ajusteNumerico = ajusteInput !== '' && !Number.isNaN(Number(ajusteInput))
+    ? Number(ajusteInput)
+    : null
+
+  const nuevoStock = ajusteNumerico !== null
+    ? stockActualSeguro + ajusteNumerico
+    : null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
 
-    if (ajuste === '' || ajuste === 0) {
-      setError('Debes ingresar un ajuste válido')
+    // Validar existencia
+    if (!existencia?.idExistencia) {
+      setError('No se encontró la existencia seleccionada.')
       return
     }
 
+    // Validar ajuste numérico
+    if (ajusteInput === '' || Number.isNaN(Number(ajusteInput))) {
+      setError('Debe ingresar un ajuste numérico válido.')
+      return
+    }
+
+    const ajuste = Number(ajusteInput)
+
+    // Validar que el nuevo stock no sea negativo
+    const stockResultante = stockActualSeguro + ajuste
+    if (stockResultante < 0) {
+      setError(`El ajuste dejaría el stock en negativo (${stockResultante}). Stock actual: ${stockActualSeguro}.`)
+      return
+    }
+
+    // Validar observación
     if (!observacion.trim()) {
-      setError('La observación es obligatoria')
+      setError('La observación es obligatoria.')
       return
     }
 
@@ -36,23 +66,47 @@ export default function AjustarStockModal({
       setLoading(true)
 
       const request: AjustarStockRequest = {
-        ajuste: Number(ajuste),
+        ajuste: ajuste,
         observacion: observacion.trim(),
       }
+
+      console.log('Existencia seleccionada:', existencia)
+      console.log('Stock actual (seguro):', stockActualSeguro)
+      console.log('Ajuste ingresado:', ajuste)
+      console.log('Nuevo stock calculado:', stockResultante)
+      console.log('Request ajustar stock:', request)
 
       await inventarioService.ajustarStock(existencia.idExistencia, request)
       onSuccess()
       onClose()
     } catch (err: any) {
-      const mensaje = err?.response?.data?.mensaje || 'Error al ajustar el stock'
+      console.error('Error al ajustar stock:', {
+        error: err,
+        status: err?.response?.status,
+        data: err?.response?.data,
+        url: err?.config?.url,
+        method: err?.config?.method,
+      })
+      const mensaje =
+        err?.response?.data?.message ||
+        err?.response?.data?.mensaje ||
+        err?.response?.data?.error ||
+        (typeof err?.response?.data === 'string' ? err.response.data : null) ||
+        (err?.response?.data ? JSON.stringify(err.response.data) : null) ||
+        err?.message ||
+        'Error al ajustar el stock'
       setError(mensaje)
-      console.error('Error:', err)
     } finally {
       setLoading(false)
     }
   }
 
-  const nuevoStock = (Number(ajuste) || 0) + existencia.cantidadDisponible
+  // Texto del nuevo stock para mostrar al usuario
+  const nuevoStockTexto = () => {
+    if (nuevoStock === null) return '-'
+    if (nuevoStock < 0) return 'Inválido (quedaría negativo)'
+    return nuevoStock.toString()
+  }
 
   return (
     <div
@@ -63,7 +117,7 @@ export default function AjustarStockModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: '1000',
+        zIndex: 1000,
       }}
       onClick={onClose}
     >
@@ -114,7 +168,7 @@ export default function AjustarStockModal({
                   Stock Actual
                 </label>
                 <p style={{ margin: '8px 0 0 0', fontSize: '20px', fontWeight: '700', color: 'var(--neutral-900)' }}>
-                  {existencia.cantidadDisponible}
+                  {stockActualSeguro}
                 </p>
               </div>
               <div>
@@ -122,7 +176,7 @@ export default function AjustarStockModal({
                   Stock Mínimo
                 </label>
                 <p style={{ margin: '8px 0 0 0', fontSize: '20px', fontWeight: '700', color: 'var(--primary)' }}>
-                  {existencia.cantidadMínima}
+                  {stockMinimoSeguro}
                 </p>
               </div>
             </div>
@@ -136,8 +190,8 @@ export default function AjustarStockModal({
             <input
               type="number"
               required
-              value={ajuste}
-              onChange={(e) => setAjuste(e.target.value)}
+              value={ajusteInput}
+              onChange={(e) => setAjusteInput(e.target.value)}
               placeholder="Ej: 10 o -5"
               style={{
                 width: '100%',
@@ -145,10 +199,11 @@ export default function AjustarStockModal({
                 border: '1px solid var(--neutral-300)',
                 borderRadius: '6px',
                 fontSize: '14px',
+                boxSizing: 'border-box',
               }}
             />
-            <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: 'var(--neutral-600)' }}>
-              Nuevo stock: <strong>{nuevoStock >= 0 ? nuevoStock : 'Inválido'}</strong>
+            <p style={{ margin: '8px 0 0 0', fontSize: '12px', color: nuevoStock !== null && nuevoStock < 0 ? '#991b1b' : 'var(--neutral-600)' }}>
+              Nuevo stock: <strong>{nuevoStockTexto()}</strong>
             </p>
           </div>
 
@@ -171,6 +226,7 @@ export default function AjustarStockModal({
                 fontSize: '14px',
                 fontFamily: 'inherit',
                 resize: 'vertical',
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -196,14 +252,14 @@ export default function AjustarStockModal({
             </button>
             <button
               type="submit"
-              disabled={loading || nuevoStock < 0}
+              disabled={loading || (nuevoStock !== null && nuevoStock < 0)}
               style={{
                 padding: '10px 16px',
-                backgroundColor: loading || nuevoStock < 0 ? 'var(--neutral-300)' : 'var(--primary)',
+                backgroundColor: loading || (nuevoStock !== null && nuevoStock < 0) ? 'var(--neutral-300)' : 'var(--primary)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
-                cursor: loading || nuevoStock < 0 ? 'not-allowed' : 'pointer',
+                cursor: loading || (nuevoStock !== null && nuevoStock < 0) ? 'not-allowed' : 'pointer',
                 fontSize: '14px',
                 fontWeight: '600',
               }}

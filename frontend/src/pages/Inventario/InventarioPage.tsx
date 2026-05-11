@@ -4,6 +4,25 @@ import { inventarioService } from '@/services'
 import type { Existencia } from '@/types'
 import AjustarStockModal from './AjustarStockModal'
 
+// Normaliza la respuesta del backend (stockActual/stockMinimo) al tipo Existencia del frontend
+const normalizarExistencia = (item: any): Existencia => ({
+  idExistencia: Number(item.idExistencia),
+  idProducto: Number(item.idProducto),
+  idBodega: Number(item.idBodega),
+  nombreProducto: item.nombreProducto ?? item.producto?.nombre ?? `Producto #${item.idProducto}`,
+  codigoSkuProducto: item.codigoSkuProducto ?? item.producto?.codigoSku ?? '',
+  nombreBodega: item.nombreBodega ?? item.bodega?.nombre ?? `Bodega #${item.idBodega}`,
+  stockActual: Number(item.stockActual ?? item.cantidadDisponible ?? 0),
+  stockReservado: Number(item.stockReservado ?? item.cantidadReservada ?? 0),
+  stockDisponible: Number(item.stockDisponible ?? item.cantidadDisponible ?? 0),
+  stockMinimo: Number(item.stockMinimo ?? item.cantidadMínima ?? 0),
+  fechaActualizacion: item.fechaActualizacion,
+  // Aliases de compatibilidad
+  cantidadDisponible: Number(item.stockDisponible ?? item.cantidadDisponible ?? 0),
+  cantidadReservada: Number(item.stockReservado ?? item.cantidadReservada ?? 0),
+  cantidadMínima: Number(item.stockMinimo ?? item.cantidadMínima ?? 0),
+})
+
 export default function InventarioPage() {
   const [existencias, setExistencias] = useState<Existencia[]>([])
   const [filteredExistencias, setFilteredExistencias] = useState<Existencia[]>([])
@@ -44,9 +63,12 @@ export default function InventarioPage() {
         const existenciasEnBodega = await inventarioService.obtenerExistenciasPorBodega(
           bodega.idBodega
         )
-        allExistencias.push(...existenciasEnBodega)
+        // Normalizar cada existencia para alinear campos del backend con el frontend
+        const normalizadas = (existenciasEnBodega as any[]).map(normalizarExistencia)
+        allExistencias.push(...normalizadas)
       }
 
+      console.log('Existencias normalizadas:', allExistencias)
       setExistencias(allExistencias)
     } catch (err) {
       setError('Error al cargar el inventario. Intenta nuevamente.')
@@ -56,17 +78,17 @@ export default function InventarioPage() {
     }
   }
 
-  const getStockBadgeColor = (disponible: number, minimo: number): 'success' | 'warning' | 'danger' => {
-    if (disponible === 0) return 'danger'
-    if (disponible <= minimo) return 'danger'
-    if (disponible <= minimo * 1.5) return 'warning'
+  const getStockBadgeColor = (stockActual: number, stockMinimo: number): 'success' | 'warning' | 'danger' => {
+    if (stockActual === 0) return 'danger'
+    if (stockActual <= stockMinimo) return 'danger'
+    if (stockActual <= stockMinimo * 1.5) return 'warning'
     return 'success'
   }
 
-  const getStockLabel = (disponible: number, minimo: number): string => {
-    if (disponible === 0) return 'Sin Stock'
-    if (disponible < minimo) return 'Bajo Mínimo'
-    if (disponible <= minimo * 1.5) return 'Cercano al Mínimo'
+  const getStockLabel = (stockActual: number, stockMinimo: number): string => {
+    if (stockActual === 0) return 'Sin Stock'
+    if (stockActual < stockMinimo) return 'Bajo Mínimo'
+    if (stockActual <= stockMinimo * 1.5) return 'Cercano al Mínimo'
     return 'Normal'
   }
 
@@ -176,10 +198,13 @@ export default function InventarioPage() {
                     Bodega
                   </th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                    Disponible
+                    Stock Actual
                   </th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--neutral-700)' }}>
                     Reservado
+                  </th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                    Disponible
                   </th>
                   <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--neutral-700)' }}>
                     Mínimo
@@ -195,7 +220,7 @@ export default function InventarioPage() {
               <tbody>
                 {filteredExistencias.map((existencia) => (
                   <tr
-                    key={`${existencia.idProducto}-${existencia.idBodega}`}
+                    key={`${existencia.idExistencia}`}
                     style={{
                       borderBottom: '1px solid var(--neutral-200)',
                     }}
@@ -207,24 +232,27 @@ export default function InventarioPage() {
                       {existencia.nombreBodega || `Bodega #${existencia.idBodega}`}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--neutral-900)', fontWeight: '500' }}>
-                      {existencia.cantidadDisponible}
+                      {existencia.stockActual}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--neutral-700)' }}>
-                      {existencia.cantidadReservada}
+                      {existencia.stockReservado}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--neutral-700)' }}>
-                      {existencia.cantidadMínima}
+                      {existencia.stockDisponible}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--neutral-700)' }}>
+                      {existencia.stockMinimo}
                     </td>
                     <td style={{ padding: '12px 16px', textAlign: 'center' }}>
                       <Badge
                         variant={getStockBadgeColor(
-                          existencia.cantidadDisponible,
-                          existencia.cantidadMínima
+                          existencia.stockActual,
+                          existencia.stockMinimo
                         )}
                       >
                         {getStockLabel(
-                          existencia.cantidadDisponible,
-                          existencia.cantidadMínima
+                          existencia.stockActual,
+                          existencia.stockMinimo
                         )}
                       </Badge>
                     </td>

@@ -70,7 +70,7 @@ public class Envio {
         this.id = GeneradorStringUtil.generarID();
         this.idPedidoRef = "";
         this.codigoEnvio = GeneradorStringUtil.generarCodigoEnvio();
-        this.estado = "PENDIENTE"; // todo envío nace en estado PENDIENTE
+        this.estado = "PENDIENTE_ASIGNACION"; // alineado con estados del BFF y del frontend
         this.costoTotal = 0.0;
     }
 

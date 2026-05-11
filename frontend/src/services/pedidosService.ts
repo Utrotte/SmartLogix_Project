@@ -53,7 +53,8 @@ export const pedidosService = {
     idPedido: number,
     cambio: CambiarEstadoPedidoRequest
   ): Promise<PedidoResponse> {
-    const response = await apiClient.patch<PedidoResponse>(
+    console.log("Frontend -> PUT cambiar estado:", { idPedido, request: cambio });
+    const response = await apiClient.put<PedidoResponse>(
       `/api/bff/pedidos/${idPedido}/estado`,
       cambio
     )

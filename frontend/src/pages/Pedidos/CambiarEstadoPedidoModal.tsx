@@ -9,11 +9,19 @@ interface CambiarEstadoPedidoModalProps {
   onSuccess: () => void
 }
 
-const estadosDisponibles = ['PENDIENTE_CONFIRMACION', 'CONFIRMADO', 'CANCELADO', 'COMPLETADO']
+// Estados disponibles según requerimiento del profesor
+const ESTADOS_DISPONIBLES = [
+  { value: 'PENDIENTE_CONFIRMACION', label: 'Pendiente' },
+  { value: 'CONFIRMADO', label: 'Confirmado' },
+  { value: 'COMPLETADO', label: 'Completado' },
+  { value: 'CANCELADO', label: 'Cancelado' },
+]
 
 const getEstadoLabel = (estado: string) => {
   switch (estado) {
     case 'PENDIENTE_CONFIRMACION':
+    case 'PENDIENTE':
+    case 'CREADO':
       return 'Pendiente'
     case 'CONFIRMADO':
       return 'Confirmado'
@@ -24,6 +32,14 @@ const getEstadoLabel = (estado: string) => {
     default:
       return estado
   }
+}
+
+const obtenerMensajeError = (error: any, fallback: string) => {
+  const data = error?.response?.data;
+  if (typeof data === 'string' && data.trim()) return data;
+  if (data?.message) return data.message;
+  if (data?.error) return data.error;
+  return fallback;
 }
 
 export default function CambiarEstadoPedidoModal({
@@ -59,23 +75,37 @@ export default function CambiarEstadoPedidoModal({
     try {
       setLoading(true)
 
+      console.log('Cambio estado pedido:', { idPedido, estadoNuevo: nuevoEstado })
+
       const cambio: CambiarEstadoPedidoRequest = {
         nuevoEstado,
         observacion: observacion.trim(),
-        usuarioResponsable: '', // Se completará en el backend con datos de sesión
+        usuarioResponsable: 'SISTEMA',
       }
 
       await pedidosService.cambiarEstadoPedido(idPedido, cambio)
       onSuccess()
       onClose()
     } catch (err: any) {
-      const mensaje = err?.response?.data?.mensaje || 'Error al cambiar el estado'
-      setError(mensaje)
-      console.error('Error:', err)
+      console.error('Error al cambiar estado:', {
+        status: err?.response?.status,
+        data: err?.response?.data,
+        message: err?.message,
+      })
+      setError(obtenerMensajeError(err, 'Error al cambiar el estado del pedido'))
     } finally {
       setLoading(false)
     }
   }
+
+  // Filtrar estados: no mostrar el estado actual
+  const estadosFiltered = ESTADOS_DISPONIBLES.filter((e) => {
+    // El estado actual puede venir como CREADO o PENDIENTE_CONFIRMACION — ambos equivalen a Pendiente
+    const esActual =
+      e.value === estadoActual ||
+      (estadoActual === 'CREADO' && e.value === 'PENDIENTE_CONFIRMACION')
+    return !esActual
+  })
 
   return (
     <div
@@ -86,28 +116,29 @@ export default function CambiarEstadoPedidoModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: '1000',
+        zIndex: 1000,
       }}
       onClick={onClose}
     >
       <div
         style={{
           backgroundColor: 'white',
-          borderRadius: '8px',
-          padding: '28px',
+          borderRadius: '12px',
+          padding: '32px',
           maxWidth: '500px',
           width: '90%',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ margin: '0 0 8px 0', color: 'var(--neutral-900)', fontSize: '20px' }}>
+          <h2 style={{ margin: '0 0 8px 0', color: '#0D1B3D', fontSize: '20px', fontWeight: '700' }}>
             Cambiar Estado del Pedido
           </h2>
           <p style={{ margin: '0', color: 'var(--neutral-600)', fontSize: '14px' }}>
-            Estado actual: <strong>{getEstadoLabel(estadoActual)}</strong>
+            Estado actual:{' '}
+            <strong style={{ color: '#0D1B3D' }}>{getEstadoLabel(estadoActual)}</strong>
           </p>
         </div>
 
@@ -144,16 +175,15 @@ export default function CambiarEstadoPedidoModal({
                 border: '1px solid var(--neutral-300)',
                 borderRadius: '6px',
                 fontSize: '14px',
+                backgroundColor: 'white',
               }}
             >
               <option value="">Selecciona un estado</option>
-              {estadosDisponibles
-                .filter((e) => e !== estadoActual)
-                .map((estado) => (
-                  <option key={estado} value={estado}>
-                    {getEstadoLabel(estado)}
-                  </option>
-                ))}
+              {estadosFiltered.map((estado) => (
+                <option key={estado.value} value={estado.value}>
+                  {estado.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -176,6 +206,7 @@ export default function CambiarEstadoPedidoModal({
                 fontSize: '14px',
                 fontFamily: 'inherit',
                 resize: 'vertical',
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -188,9 +219,9 @@ export default function CambiarEstadoPedidoModal({
               disabled={loading}
               style={{
                 padding: '10px 16px',
-                backgroundColor: 'var(--neutral-200)',
-                color: 'var(--neutral-900)',
-                border: 'none',
+                backgroundColor: '#F5F7FA',
+                color: '#0D1B3D',
+                border: '1px solid #D1D5DB',
                 borderRadius: '6px',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 fontSize: '14px',
@@ -204,7 +235,7 @@ export default function CambiarEstadoPedidoModal({
               disabled={loading}
               style={{
                 padding: '10px 16px',
-                backgroundColor: loading ? 'var(--neutral-300)' : 'var(--primary)',
+                backgroundColor: loading ? 'var(--neutral-300)' : '#0066CC',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
@@ -213,7 +244,7 @@ export default function CambiarEstadoPedidoModal({
                 fontWeight: '600',
               }}
             >
-              {loading ? 'Cambiando...' : 'Cambiar Estado'}
+              {loading ? 'Cambiando...' : 'Guardar Estado'}
             </button>
           </div>
         </form>

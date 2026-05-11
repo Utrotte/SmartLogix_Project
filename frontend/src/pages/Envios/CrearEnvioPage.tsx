@@ -1,20 +1,90 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Card } from '@/components/UI'
 import { enviosService, pedidosService } from '@/services'
 import type { DireccionEnvio, PaqueteEnvio, CrearEnvioRequest } from '@/types'
 
+const parseDimensiones = (dimensiones: string) => {
+  const partes = dimensiones
+    .toLowerCase()
+    .replaceAll(" ", "")
+    .split("x")
+    .map((n) => Number(n));
+
+  if (partes.length !== 3 || partes.some((n) => Number.isNaN(n) || n <= 0)) {
+    throw new Error("Las dimensiones deben tener formato AltoXAnchoXLargo, por ejemplo 20X15X10.");
+  }
+
+  return {
+    altoCm: partes[0],
+    anchoCm: partes[1],
+    largoCm: partes[2],
+  };
+};
+
+// Normaliza el pedido recibido del backend para extraer todos los campos útiles
+const normalizarPedidoParaEnvio = (raw: any) => {
+  const estado =
+    raw.estadoActual ?? raw.estado ?? raw.estadoPedido ?? raw.estado_actual ?? ''
+
+  const totalNeto = Number(
+    raw.totalNeto ?? raw.total_neto ?? raw.total ?? raw.montoTotal ?? 0
+  )
+
+  // Calcular total desde detalles si viene 0
+  const detalles = Array.isArray(raw.detalles)
+    ? raw.detalles
+    : Array.isArray(raw.detallePedido)
+    ? raw.detallePedido
+    : []
+
+  const totalDeDetalles = detalles.reduce((acc: number, d: any) => {
+    const sub =
+      Number(d.subtotal ?? d.subTotal ?? 0) ||
+      Number(d.precioUnitario ?? 0) * Number(d.cantidad ?? 0)
+    return acc + sub
+  }, 0)
+
+  const total = totalNeto > 0 ? totalNeto : totalDeDetalles
+
+  const cliente = raw.cliente ?? null
+  const nombreCliente =
+    raw.nombreCliente ??
+    raw.clienteNombre ??
+    (cliente ? `${cliente.nombre ?? ''} ${cliente.apellido ?? ''}`.trim() : '')
+
+  const correoCliente = cliente?.correo ?? raw.correoCliente ?? ''
+  const telefonoCliente = cliente?.telefono ?? raw.telefonoCliente ?? ''
+
+  const dir = raw.direccionEntrega ?? raw.direccion_entrega ?? raw.direccion ?? null
+
+  return {
+    idPedido: Number(raw.idPedido ?? raw.id_pedido ?? raw.id ?? 0),
+    codigoPedido: raw.codigoPedido ?? raw.codigo_pedido ?? `PED-${raw.idPedido}`,
+    estado,
+    total,
+    nombreCliente,
+    correoCliente,
+    telefonoCliente,
+    detalles,
+    direccionEntrega: dir,
+  }
+}
+
 export default function CrearEnvioPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   // Búsqueda de pedido
-  const [idPedidoInput, setIdPedidoInput] = useState('')
-  const [pedidoSeleccionado, setPedidoSeleccionado] = useState<any>(null)
+  const [idPedidoInput, setIdPedidoInput] = useState(searchParams.get('idPedido') ?? '')
+  const [pedidoNormalizado, setPedidoNormalizado] = useState<ReturnType<typeof normalizarPedidoParaEnvio> | null>(null)
   const [buscarLoading, setBuscarLoading] = useState(false)
 
-  // Formulario
+  // Formulario de dirección (auto-rellenado desde pedido)
   const [direccion, setDireccion] = useState<DireccionEnvio>({
     calle: '',
     ciudad: '',
@@ -29,31 +99,89 @@ export default function CrearEnvioPage() {
     contenido: '',
   })
 
-  const buscarPedido = async () => {
-    if (!idPedidoInput.trim()) {
+  // Si hay idPedido en URL, buscar automáticamente
+  useEffect(() => {
+    const idDesdeURL = searchParams.get('idPedido')
+    if (idDesdeURL) {
+      buscarPedido(idDesdeURL)
+    }
+  }, [])
+
+  const buscarPedido = async (id?: string) => {
+    const idBuscar = id ?? idPedidoInput
+    if (!idBuscar.trim()) {
       setError('Ingresa un ID de pedido válido')
+      return
+    }
+
+    const idNum = Number(idBuscar)
+    if (isNaN(idNum) || idNum <= 0) {
+      setError('El ID debe ser un número válido')
       return
     }
 
     try {
       setBuscarLoading(true)
       setError(null)
-      const pedido = await pedidosService.obtenerPedido(Number(idPedidoInput))
+      setPedidoNormalizado(null)
 
-      // Validar que sea un pedido en estado válido para enviar
-      if (!['CREADO', 'CONFIRMADO', 'PAGADO'].includes(pedido.estadoActual)) {
-        setError(`El pedido debe estar en estado CREADO, CONFIRMADO o PAGADO. Estado actual: ${pedido.estadoActual}`)
+      console.log('Buscando pedido para envío:', idNum)
+
+      const raw = await pedidosService.obtenerPedido(idNum)
+
+      console.log('Pedido recibido para envío (raw):', raw)
+
+      const norm = normalizarPedidoParaEnvio(raw)
+
+      console.log('Pedido normalizado para envío:', norm)
+
+      // Validar: solo CONFIRMADO puede crear envío
+      if (norm.estado !== 'CONFIRMADO') {
+        setError(
+          `Solo se pueden crear envíos para pedidos CONFIRMADOS. ` +
+          `Estado actual: ${norm.estado || 'DESCONOCIDO'}. ` +
+          `Cambia el estado del pedido a CONFIRMADO antes de crear el envío.`
+        )
         return
       }
 
-      setPedidoSeleccionado(pedido)
-      // Pre-llenar dirección si está disponible
-      if (pedido.direccionEntrega) {
-        setDireccion(pedido.direccionEntrega)
+      setPedidoNormalizado(norm)
+
+      // Auto-rellenar dirección desde pedido
+      if (norm.direccionEntrega) {
+        const dir = norm.direccionEntrega
+        setDireccion({
+          calle: [dir.calle, dir.numero].filter(Boolean).join(' ') || '',
+          ciudad: dir.ciudad ?? '',
+          region: dir.region ?? '',
+          codigoPostal: dir.codigoPostal ?? dir.codigo_postal ?? '',
+          instrucciones: dir.referencia ?? '',
+        })
+      }
+
+      // Auto-rellenar contenido del paquete con resumen de productos
+      if (norm.detalles.length > 0) {
+        const resumen = norm.detalles
+          .map((d: any) => {
+            const nombre = d.nombreProductoSnapshot ?? d.nombreProducto ?? 'Producto'
+            const cant = d.cantidad ?? 1
+            return `${cant}x ${nombre}`
+          })
+          .join(', ')
+        setPaquete((prev) => ({ ...prev, contenido: resumen }))
       }
     } catch (err: any) {
-      setError('Pedido no encontrado o error en la búsqueda')
-      console.error('Error:', err)
+      console.error('Error buscando pedido para envío:', {
+        status: err?.response?.status,
+        data: err?.response?.data,
+        message: err?.message,
+        url: err?.config?.url,
+      })
+      setError(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Pedido no encontrado. Verifica el ID ingresado.'
+      )
     } finally {
       setBuscarLoading(false)
     }
@@ -61,9 +189,17 @@ export default function CrearEnvioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    setSuccess(null)
 
-    if (!pedidoSeleccionado) {
-      setError('Debes seleccionar un pedido')
+    if (!pedidoNormalizado) {
+      setError('Debes seleccionar un pedido confirmado')
+      return
+    }
+
+    // Validación de negocio: solo CONFIRMADO
+    if (pedidoNormalizado.estado !== 'CONFIRMADO') {
+      setError('Solo se pueden crear envíos para pedidos confirmados.')
       return
     }
 
@@ -87,21 +223,75 @@ export default function CrearEnvioPage() {
       return
     }
 
-    try {
-      setLoading(true)
-      setError(null)
+    setLoading(true)
 
-      const envioRequest: CrearEnvioRequest = {
-        idPedidoRef: pedidoSeleccionado.idPedido.toString(),
-        direccion,
-        paquete,
+    try {
+      const dim = parseDimensiones(paquete.dimensiones)
+
+      const envioRequest = {
+        idPedidoRef: pedidoNormalizado.idPedido.toString(),
+        calle: direccion.calle,
+        numero: '', // El formulario actualmente no tiene campo número separado, así que puede ir vacío o en calle
+        comuna: '',
+        ciudad: direccion.ciudad,
+        region: direccion.region,
+        referencia: direccion.instrucciones,
+        pesoKg: paquete.peso,
+        altoCm: dim.altoCm,
+        anchoCm: dim.anchoCm,
+        largoCm: dim.largoCm,
+        descripcionContenido: paquete.contenido
       }
 
+      console.log("Pedido seleccionado para envío:", pedidoNormalizado);
+      console.log("Dirección usada para envío:", direccion);
+      console.log("Datos paquete:", paquete);
+      console.log("Request final crear envío:", envioRequest);
+
+      console.log('Request crear envío:', envioRequest)
+      console.log('Pedido normalizado para envío:', pedidoNormalizado)
+
       const response = await enviosService.crearEnvio(envioRequest)
-      navigate(`/envios/${response.idEnvio}`)
+
+      console.log('Respuesta crear envío:', response)
+
+      const idEnvio = (response as any)?.idEnvio ?? (response as any)?.data?.idEnvio
+
+      if (idEnvio) {
+        navigate(`/envios/${idEnvio}`)
+      } else {
+        navigate('/envios')
+      }
     } catch (err: any) {
-      setError('Error al crear el envío. Intenta nuevamente.')
-      console.error('Error:', err)
+      console.error('Error al crear envío:', {
+        status: err?.response?.status,
+        data: err?.response?.data,
+        message: err?.message,
+        url: err?.config?.url,
+        method: err?.config?.method,
+        headers: err?.config?.headers,
+      })
+
+      if (err?.response?.status === 403) {
+        setError('No tienes permisos para crear envíos o tu sesión no es válida. Vuelve a iniciar sesión.')
+        return
+      }
+
+      if (err?.response?.status === 401) {
+        setError('Sesión expirada o inválida. Inicia sesión nuevamente.')
+        return
+      }
+
+      const data = err?.response?.data
+      const mensaje =
+        typeof data === 'string'
+          ? data
+          : data?.message ||
+            data?.error ||
+            JSON.stringify(data) ||
+            'Error al crear el envío. Intenta nuevamente.'
+
+      setError(mensaje)
     } finally {
       setLoading(false)
     }
@@ -128,10 +318,27 @@ export default function CrearEnvioPage() {
         <h1 style={{ margin: '10px 0 5px 0', color: 'var(--neutral-900)' }}>
           Crear Nuevo Envío
         </h1>
-        <p style={{ margin: '0', color: 'var(--neutral-600)', fontSize: '16px' }}>
-          Ingresa los datos del envío
+        <p style={{ margin: '0', color: 'var(--neutral-600)', fontSize: '14px' }}>
+          Solo se pueden crear envíos para pedidos con estado <strong>CONFIRMADO</strong>.
         </p>
       </div>
+
+      {/* Success */}
+      {success && (
+        <div
+          style={{
+            backgroundColor: '#dcfce7',
+            color: '#166534',
+            padding: '12px 16px',
+            borderRadius: '6px',
+            marginBottom: '20px',
+            fontSize: '14px',
+            border: '1px solid #86efac',
+          }}
+        >
+          ✅ {success}
+        </div>
+      )}
 
       {/* Error */}
       {error && (
@@ -151,15 +358,15 @@ export default function CrearEnvioPage() {
 
       <form onSubmit={handleSubmit}>
         {/* 1. Seleccionar Pedido */}
-        <Card title="Seleccionar Pedido" padding="20px" style={{ marginBottom: '20px' }}>
+        <Card title="Seleccionar Pedido Confirmado" padding="20px" style={{ marginBottom: '20px' }}>
           <div style={{ marginBottom: '20px' }}>
             <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', color: 'var(--neutral-700)' }}>
               ID del Pedido (Requerido)
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
-                type="text"
-                placeholder="Ej: PED-001"
+                type="number"
+                placeholder="Ej: 1"
                 value={idPedidoInput}
                 onChange={(e) => setIdPedidoInput(e.target.value)}
                 style={{
@@ -170,14 +377,15 @@ export default function CrearEnvioPage() {
                   fontSize: '14px',
                 }}
                 disabled={buscarLoading}
+                min="1"
               />
               <button
                 type="button"
-                onClick={buscarPedido}
+                onClick={() => buscarPedido()}
                 disabled={buscarLoading}
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: 'var(--primary)',
+                  backgroundColor: '#0066CC',
                   color: 'white',
                   border: 'none',
                   borderRadius: '6px',
@@ -191,26 +399,71 @@ export default function CrearEnvioPage() {
             </div>
           </div>
 
-          {pedidoSeleccionado && (
+          {/* Información del pedido seleccionado */}
+          {pedidoNormalizado && (
             <div
               style={{
-                backgroundColor: 'var(--neutral-50)',
-                padding: '12px',
-                borderRadius: '6px',
-                border: '1px solid var(--success)',
-                color: 'var(--neutral-700)',
-                fontSize: '14px',
+                backgroundColor: '#f0fdf4',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #86efac',
               }}
             >
-              <p style={{ margin: '0 0 8px 0' }}>
-                <strong>✓ Pedido seleccionado:</strong> {pedidoSeleccionado.idPedido}
+              <p style={{ margin: '0 0 4px 0', fontWeight: '700', color: '#166534', fontSize: '14px' }}>
+                ✅ Pedido Confirmado
               </p>
-              <p style={{ margin: '0 0 8px 0' }}>
-                <strong>Cliente:</strong> {pedidoSeleccionado.nombreCliente || 'N/A'}
-              </p>
-              <p style={{ margin: '0' }}>
-                <strong>Monto:</strong> ${pedidoSeleccionado.montoTotal?.toFixed(2) || '0.00'}
-              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+                <div>
+                  <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>ID</span>
+                  <p style={{ margin: '2px 0 0 0', color: '#111827', fontSize: '14px' }}>
+                    {pedidoNormalizado.idPedido} — {pedidoNormalizado.codigoPedido}
+                  </p>
+                </div>
+                <div>
+                  <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>Estado</span>
+                  <p style={{ margin: '2px 0 0 0', color: '#059669', fontSize: '14px', fontWeight: '600' }}>
+                    {pedidoNormalizado.estado}
+                  </p>
+                </div>
+                <div>
+                  <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>Cliente</span>
+                  <p style={{ margin: '2px 0 0 0', color: '#111827', fontSize: '14px' }}>
+                    {pedidoNormalizado.nombreCliente || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>Monto Total</span>
+                  <p style={{ margin: '2px 0 0 0', color: '#0D1B3D', fontSize: '16px', fontWeight: '700' }}>
+                    ${pedidoNormalizado.total.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                </div>
+                {pedidoNormalizado.correoCliente && (
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>Correo</span>
+                    <p style={{ margin: '2px 0 0 0', color: '#111827', fontSize: '14px' }}>
+                      {pedidoNormalizado.correoCliente}
+                    </p>
+                  </div>
+                )}
+                {pedidoNormalizado.telefonoCliente && (
+                  <div>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>Teléfono</span>
+                    <p style={{ margin: '2px 0 0 0', color: '#111827', fontSize: '14px' }}>
+                      {pedidoNormalizado.telefonoCliente}
+                    </p>
+                  </div>
+                )}
+                {pedidoNormalizado.detalles.length > 0 && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <span style={{ fontSize: '12px', color: '#6B7280', fontWeight: '600' }}>Productos</span>
+                    <p style={{ margin: '2px 0 0 0', color: '#111827', fontSize: '13px' }}>
+                      {pedidoNormalizado.detalles
+                        .map((d: any) => `${d.cantidad}x ${d.nombreProductoSnapshot ?? 'Producto'}`)
+                        .join(', ')}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </Card>
@@ -233,6 +486,7 @@ export default function CrearEnvioPage() {
                   border: '1px solid var(--neutral-300)',
                   borderRadius: '6px',
                   fontSize: '14px',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -251,6 +505,7 @@ export default function CrearEnvioPage() {
                   border: '1px solid var(--neutral-300)',
                   borderRadius: '6px',
                   fontSize: '14px',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -272,6 +527,7 @@ export default function CrearEnvioPage() {
                   border: '1px solid var(--neutral-300)',
                   borderRadius: '6px',
                   fontSize: '14px',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -290,6 +546,7 @@ export default function CrearEnvioPage() {
                   border: '1px solid var(--neutral-300)',
                   borderRadius: '6px',
                   fontSize: '14px',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -312,6 +569,7 @@ export default function CrearEnvioPage() {
                 fontFamily: 'inherit',
                 minHeight: '80px',
                 resize: 'vertical',
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -337,6 +595,7 @@ export default function CrearEnvioPage() {
                   border: '1px solid var(--neutral-300)',
                   borderRadius: '6px',
                   fontSize: '14px',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -355,6 +614,7 @@ export default function CrearEnvioPage() {
                   border: '1px solid var(--neutral-300)',
                   borderRadius: '6px',
                   fontSize: '14px',
+                  boxSizing: 'border-box',
                 }}
               />
             </div>
@@ -377,6 +637,7 @@ export default function CrearEnvioPage() {
                 fontFamily: 'inherit',
                 minHeight: '80px',
                 resize: 'vertical',
+                boxSizing: 'border-box',
               }}
             />
           </div>
@@ -402,14 +663,14 @@ export default function CrearEnvioPage() {
           </button>
           <button
             type="submit"
-            disabled={loading || !pedidoSeleccionado}
+            disabled={loading || !pedidoNormalizado}
             style={{
               padding: '10px 20px',
-              backgroundColor: loading || !pedidoSeleccionado ? 'var(--neutral-400)' : 'var(--primary)',
+              backgroundColor: loading || !pedidoNormalizado ? 'var(--neutral-400)' : '#0066CC',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
-              cursor: loading || !pedidoSeleccionado ? 'not-allowed' : 'pointer',
+              cursor: loading || !pedidoNormalizado ? 'not-allowed' : 'pointer',
               fontSize: '14px',
               fontWeight: '600',
             }}

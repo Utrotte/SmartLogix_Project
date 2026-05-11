@@ -43,6 +43,9 @@ public class SessionTokenFilter extends OncePerRequestFilter {
         
         String requestPath = request.getServletPath();
         
+        System.out.println("SessionTokenFilter -> URI: " + request.getRequestURI());
+        System.out.println("SessionTokenFilter -> Method: " + request.getMethod());
+
         // Permitir rutas públicas
         if (isPublicUrl(requestPath)) {
             filterChain.doFilter(request, response);
@@ -59,17 +62,25 @@ public class SessionTokenFilter extends OncePerRequestFilter {
         String token = request.getHeader("X-Session-Token");
         
         if (token == null || token.isEmpty()) {
-            filterChain.doFilter(request, response);
+            System.out.println("SessionTokenFilter -> No llegó X-Session-Token");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"No autenticado: Falla X-Session-Token\"}");
+            response.setContentType("application/json");
             return;
         }
         
+        System.out.println("SessionTokenFilter -> Token recibido: " + token);
+
         try {
             // Buscar sesión activa
             Optional<SesionAplicacion> sesionOpt = sesionRepository
                     .findByTokenReferenciaAndEstado(token, "ACTIVA");
             
             if (sesionOpt.isEmpty()) {
-                filterChain.doFilter(request, response);
+                System.out.println("SessionTokenFilter -> Token no encontrado o no activo");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Token inválido o inactivo\"}");
+                response.setContentType("application/json");
                 return;
             }
             
@@ -77,12 +88,17 @@ public class SessionTokenFilter extends OncePerRequestFilter {
             
             // Validar que no haya expirado
             if (LocalDateTime.now().isAfter(sesion.getFechaExpiracion())) {
+                System.out.println("SessionTokenFilter -> Token expirado");
                 sesion.setEstado("EXPIRADA");
                 sesionRepository.save(sesion);
-                filterChain.doFilter(request, response);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\": \"Token expirado\"}");
+                response.setContentType("application/json");
                 return;
             }
             
+            System.out.println("SessionTokenFilter -> Usuario autenticado: " + sesion.getUsuario().getCorreo());
+
             // Cargar roles del usuario
             List<GrantedAuthority> authorities = new ArrayList<>();
             if (sesion.getUsuario() != null && sesion.getUsuario().getUsuarioRoles() != null) {
@@ -105,6 +121,10 @@ public class SessionTokenFilter extends OncePerRequestFilter {
             
         } catch (Exception e) {
             logger.error("Error al procesar token de sesión", e);
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"error\": \"Error interno al validar token\"}");
+            response.setContentType("application/json");
+            return;
         }
         
         filterChain.doFilter(request, response);

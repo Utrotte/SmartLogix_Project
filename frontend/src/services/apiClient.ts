@@ -12,7 +12,12 @@ const apiClient = axios.create({
 
 // Interceptor para agregar token a cada request
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('sessionToken')
+  const token = localStorage.getItem('smartlogix_token')
+
+  console.log("Axios token enviado:", token);
+  console.log("Axios URL:", config.url);
+  console.log("Axios method:", config.method);
+
   if (token) {
     config.headers['X-Session-Token'] = token
   }
@@ -25,9 +30,11 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // Token expirado o inválido
-      localStorage.removeItem('sessionToken')
-      localStorage.removeItem('usuario')
-      window.location.href = '/login'
+      localStorage.removeItem('smartlogix_token')
+      localStorage.removeItem('smartlogix_user')
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

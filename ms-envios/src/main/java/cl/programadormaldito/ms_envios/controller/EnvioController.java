@@ -16,8 +16,10 @@ import cl.programadormaldito.ms_envios.dto.EnvioRequestDTO;
 import cl.programadormaldito.ms_envios.dto.EnvioResponseDTO;
 import cl.programadormaldito.ms_envios.service.EnvioService;
 
+import cl.programadormaldito.ms_envios.dto.CambiarEstadoEnvioRequest;
+
 @RestController
-@RequestMapping("/envios")
+@RequestMapping("/api/envios")
 public class EnvioController {
 
     @Autowired
@@ -47,10 +49,14 @@ public class EnvioController {
         return this.envioService.envioBuscarPorPedido(idPedidoRef);
     }
 
-    // PUT /envios/{id}/estado?estado=EN_TRANSITO — actualiza el ciclo de vida del envío
+    // PUT /api/envios/{id}/estado — actualiza el ciclo de vida del envío
     @PutMapping("/{id}/estado")
-    public EnvioResponseDTO envioActualizarEstado(@PathVariable String id, @RequestParam String estado) {
-        return this.envioService.envioActualizarEstado(id, estado);
+    public EnvioResponseDTO envioActualizarEstado(
+            @PathVariable String id, 
+            @RequestBody CambiarEstadoEnvioRequest request) {
+        System.out.println("MS_ENVIOS -> PUT cambiar estado ID: " + id);
+        System.out.println("MS_ENVIOS -> Request estado: " + request.getEstadoEnvio());
+        return this.envioService.envioActualizarEstado(id, request.getEstadoEnvio(), request.getObservacion());
     }
 
     // PUT /envios/{idEnvio}/asignar-transportista/{idTransportista}

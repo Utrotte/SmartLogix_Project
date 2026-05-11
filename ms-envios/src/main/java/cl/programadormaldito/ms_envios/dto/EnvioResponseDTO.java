@@ -6,6 +6,8 @@ import java.time.LocalDate;
 public class EnvioResponseDTO {
 
     private String id;
+    /** Mismo valor que {@link #id}; facilita consumo desde el frontend (idEnvio). */
+    private String idEnvio;
     private String idPedidoRef;
     private String codigoEnvio;
     private String estado;
@@ -14,9 +16,13 @@ public class EnvioResponseDTO {
     private Double costoTotal;
     private String idTransportista;
     private String nombreTransportista; // incluido para no tener que hacer otra consulta
+    /** ISO-8601; el frontend usa fechaCreacion para listados y detalle. */
+    private String fechaCreacion;
+    private DireccionEnvioResponseDTO direccion;
 
     public EnvioResponseDTO() {
         this.id = "";
+        this.idEnvio = "";
         this.idPedidoRef = "";
         this.codigoEnvio = "";
         this.estado = "";
@@ -25,6 +31,14 @@ public class EnvioResponseDTO {
 
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
+
+    public String getIdEnvio() {
+        return idEnvio;
+    }
+
+    public void setIdEnvio(String idEnvio) {
+        this.idEnvio = idEnvio;
+    }
     public String getIdPedidoRef() { return idPedidoRef; }
     public void setIdPedidoRef(String idPedidoRef) { this.idPedidoRef = idPedidoRef; }
     public String getCodigoEnvio() { return codigoEnvio; }
@@ -41,4 +55,20 @@ public class EnvioResponseDTO {
     public void setIdTransportista(String idTransportista) { this.idTransportista = idTransportista; }
     public String getNombreTransportista() { return nombreTransportista; }
     public void setNombreTransportista(String nombreTransportista) { this.nombreTransportista = nombreTransportista; }
+
+    public String getFechaCreacion() {
+        return fechaCreacion;
+    }
+
+    public void setFechaCreacion(String fechaCreacion) {
+        this.fechaCreacion = fechaCreacion;
+    }
+
+    public DireccionEnvioResponseDTO getDireccion() {
+        return direccion;
+    }
+
+    public void setDireccion(DireccionEnvioResponseDTO direccion) {
+        this.direccion = direccion;
+    }
 }

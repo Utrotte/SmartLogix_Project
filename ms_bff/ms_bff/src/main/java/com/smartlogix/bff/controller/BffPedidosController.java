@@ -49,17 +49,27 @@ public class BffPedidosController {
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{idPedido}/cancelar")
+    @PutMapping("/{idPedido}/cancelar")
     public ResponseEntity<Object> cancelarPedido(@PathVariable("idPedido") Long idPedido) {
+        System.out.println("BFF -> PUT cancelar pedido ID: " + idPedido);
         Object response = pedidosService.cancelarPedido(idPedido);
         return ResponseEntity.ok(response);
     }
 
-    @PatchMapping("/{idPedido}/estado")
+    @PutMapping("/{idPedido}/estado")
     public ResponseEntity<Object> cambiarEstadoPedido(
             @PathVariable("idPedido") Long idPedido,
             @RequestBody Map<String, Object> request) {
+        System.out.println("BFF -> PUT cambiar estado pedido ID: " + idPedido);
+        System.out.println("BFF -> Request recibido: " + request);
         Object response = pedidosService.cambiarEstadoPedido(idPedido, request);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{idPedido}")
+    public ResponseEntity<Void> eliminarPedido(@PathVariable("idPedido") Long idPedido) {
+        System.out.println("BFF -> Eliminar pedido: " + idPedido);
+        pedidosService.eliminarPedido(idPedido);
+        return ResponseEntity.noContent().build();
     }
 }
