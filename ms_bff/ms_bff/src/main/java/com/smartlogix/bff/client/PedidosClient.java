@@ -12,17 +12,20 @@ import java.util.Map;
  * 
  * Si el nombre es distinto, cambiar en @FeignClient(name = "...")
  */
-@FeignClient(name = "ms-pedidos", path = "/api/pedidos")
+@FeignClient(name = "ms-pedidos-smartlogix", path = "/api/pedidos")
 public interface PedidosClient {
 
-    @GetMapping("/")
+    @GetMapping
     List<?> listarPedidos();
 
-    @PostMapping("/")
+    @PostMapping
     Object crearPedido(@RequestBody Map<String, Object> request);
 
     @GetMapping("/{idPedido}")
     Object buscarPedido(@PathVariable("idPedido") Long idPedido);
+
+    @GetMapping("/cliente/{idCliente}")
+    List<?> listarPedidosPorCliente(@PathVariable("idCliente") Long idCliente);
 
     @PutMapping("/{idPedido}")
     Object actualizarPedido(@PathVariable("idPedido") Long idPedido,

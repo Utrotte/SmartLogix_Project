@@ -1,5 +1,7 @@
 package com.example.ms_pedidos_smartlogix.service;
 
+import com.example.ms_pedidos_smartlogix.dto.DetallePedidoResponseDTO;
+import com.example.ms_pedidos_smartlogix.dto.DireccionEntregaResponseDTO;
 import com.example.ms_pedidos_smartlogix.dto.PedidoRequestDTO;
 import com.example.ms_pedidos_smartlogix.dto.PedidoResponseDTO;
 import com.example.ms_pedidos_smartlogix.exception.BusinessException;
@@ -8,18 +10,23 @@ import com.example.ms_pedidos_smartlogix.integration.dto.ReservaInventarioReques
 import com.example.ms_pedidos_smartlogix.integration.service.InventarioIntegrationService;
 import com.example.ms_pedidos_smartlogix.model.Cliente;
 import com.example.ms_pedidos_smartlogix.model.DetallePedido;
+import com.example.ms_pedidos_smartlogix.model.DireccionEntrega;
 import com.example.ms_pedidos_smartlogix.model.EstadoPedidoHistorial;
 import com.example.ms_pedidos_smartlogix.model.EventoOutboxPedido;
 import com.example.ms_pedidos_smartlogix.model.Pedido;
 import com.example.ms_pedidos_smartlogix.repository.ClienteRepository;
 import com.example.ms_pedidos_smartlogix.repository.DetallePedidoRepository;
+import com.example.ms_pedidos_smartlogix.repository.DireccionEntregaRepository;
 import com.example.ms_pedidos_smartlogix.repository.EstadoPedidoHistorialRepository;
 import com.example.ms_pedidos_smartlogix.repository.EventoOutboxPedidoRepository;
 import com.example.ms_pedidos_smartlogix.repository.PedidoRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class PedidoService {
@@ -27,18 +34,21 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final ClienteRepository clienteRepository;
     private final DetallePedidoRepository detallePedidoRepository;
+    private final DireccionEntregaRepository direccionEntregaRepository;
     private final EstadoPedidoHistorialRepository estadoHistorialRepository;
     private final EventoOutboxPedidoRepository eventoOutboxRepository;
     private final InventarioIntegrationService inventarioIntegrationService;
 
     public PedidoService(PedidoRepository pedidoRepository, ClienteRepository clienteRepository,
                          DetallePedidoRepository detallePedidoRepository,
+                         DireccionEntregaRepository direccionEntregaRepository,
                          EstadoPedidoHistorialRepository estadoHistorialRepository,
                          EventoOutboxPedidoRepository eventoOutboxRepository,
                          InventarioIntegrationService inventarioIntegrationService) {
         this.pedidoRepository = pedidoRepository;
         this.clienteRepository = clienteRepository;
         this.detallePedidoRepository = detallePedidoRepository;
+        this.direccionEntregaRepository = direccionEntregaRepository;
         this.estadoHistorialRepository = estadoHistorialRepository;
         this.eventoOutboxRepository = eventoOutboxRepository;
         this.inventarioIntegrationService = inventarioIntegrationService;
@@ -46,27 +56,92 @@ public class PedidoService {
 
     @Transactional
     public PedidoResponseDTO crearPedido(PedidoRequestDTO dto) {
-        // Validar que el cliente existe
-        Cliente cliente = clienteRepository.findById(dto.getIdCliente())
-                .orElseThrow(() -> new BusinessException("Cliente con ID " + dto.getIdCliente() + " no existe"));
-
-        // Validar que el código de pedido no existe
-        if (pedidoRepository.existsByCodigoPedido(dto.getCodigoPedido())) {
-            throw new BusinessException("El código de pedido " + dto.getCodigoPedido() + " ya existe");
+        if (dto.getCliente() == null) {
+            throw new BusinessException("La información del cliente es obligatoria");
         }
+        
+        // Buscar cliente por correo o crearlo si no existe
+        Cliente cliente = clienteRepository.findByCorreo(dto.getCliente().getCorreo())
+                .orElseGet(() -> {
+                    Cliente nuevoCliente = new Cliente(
+                        dto.getCliente().getNombre(),
+                        dto.getCliente().getApellido(),
+                        dto.getCliente().getCorreo(),
+                        dto.getCliente().getTelefono(),
+                        dto.getCliente().getDocumento()
+                    );
+                    return clienteRepository.save(nuevoCliente);
+                });
+
+        // Generar código de pedido si no viene
+        String codigoPedido = dto.getCodigoPedido();
+        if (codigoPedido == null || codigoPedido.trim().isEmpty()) {
+            codigoPedido = "PED-" + System.currentTimeMillis();
+        }
+
+        if (pedidoRepository.existsByCodigoPedido(codigoPedido)) {
+            throw new BusinessException("El código de pedido " + codigoPedido + " ya existe");
+        }
+
+        // Calcular totales
+        BigDecimal totalBruto = BigDecimal.ZERO;
+        if (dto.getDetalles() != null) {
+            for (var det : dto.getDetalles()) {
+                BigDecimal cantidad = new BigDecimal(det.getCantidad());
+                BigDecimal sub = det.getPrecioUnitario().multiply(cantidad);
+                totalBruto = totalBruto.add(sub);
+            }
+        }
+        
+        BigDecimal descuentoTotal = dto.getDescuentoTotal() != null ? dto.getDescuentoTotal() : BigDecimal.ZERO;
+        BigDecimal totalNeto = totalBruto.subtract(descuentoTotal);
 
         // Crear el pedido
         Pedido pedido = new Pedido(
             cliente,
-            dto.getCodigoPedido(),
-            dto.getCanalOrigen(),
-            dto.getTotalBruto(),
-            dto.getDescuentoTotal(),
-            dto.getTotalNeto(),
+            codigoPedido,
+            dto.getCanalOrigen() != null ? dto.getCanalOrigen() : "WEB",
+            totalBruto,
+            descuentoTotal,
+            totalNeto,
             dto.getObservacion()
         );
 
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
+
+        // Guardar detalles
+        if (dto.getDetalles() != null) {
+            for (var detDTO : dto.getDetalles()) {
+                BigDecimal sub = detDTO.getPrecioUnitario().multiply(new BigDecimal(detDTO.getCantidad()));
+                DetallePedido detalle = new DetallePedido(
+                    pedidoGuardado,
+                    detDTO.getIdProductoRef(),
+                    detDTO.getCodigoSkuRef(),
+                    detDTO.getNombreProductoSnapshot(),
+                    detDTO.getCantidad(),
+                    detDTO.getPrecioUnitario(),
+                    sub,
+                    "PENDIENTE"
+                );
+                detallePedidoRepository.save(detalle);
+            }
+        }
+
+        // Guardar dirección
+        if (dto.getDireccionEntrega() != null) {
+            var dirDTO = dto.getDireccionEntrega();
+            DireccionEntrega direccion = new DireccionEntrega(
+                pedidoGuardado,
+                dirDTO.getCalle(),
+                dirDTO.getNumero(),
+                dirDTO.getComuna(),
+                dirDTO.getCiudad(),
+                dirDTO.getRegion(),
+                dirDTO.getCodigoPostal(),
+                dirDTO.getReferencia()
+            );
+            direccionEntregaRepository.save(direccion);
+        }
 
         // Crear registro en estado_pedido_historial con estado CREADO
         EstadoPedidoHistorial estadoHistorial = new EstadoPedidoHistorial(
@@ -182,6 +257,36 @@ public class PedidoService {
     }
 
     private PedidoResponseDTO convertToResponseDTO(Pedido pedido, Cliente cliente) {
+        List<DetallePedido> detallesEntity = detallePedidoRepository.findByPedido_IdPedido(pedido.getIdPedido());
+        List<DetallePedidoResponseDTO> detallesDTO = detallesEntity.stream().map(d -> new DetallePedidoResponseDTO(
+                d.getIdDetalle(),
+                pedido.getIdPedido(),
+                d.getIdProductoRef(),
+                d.getCodigoSkuRef(),
+                d.getNombreProductoSnapshot(),
+                d.getCantidad(),
+                d.getPrecioUnitario(),
+                d.getSubtotal(),
+                d.getEstadoDetalle()
+        )).collect(Collectors.toList());
+
+        DireccionEntrega direccionEntity = direccionEntregaRepository.findByPedido_IdPedido(pedido.getIdPedido()).orElse(null);
+
+        DireccionEntregaResponseDTO direccionDTO = null;
+        if (direccionEntity != null) {
+            direccionDTO = new DireccionEntregaResponseDTO(
+                direccionEntity.getIdDireccion(),
+                pedido.getIdPedido(),
+                direccionEntity.getCalle(),
+                direccionEntity.getNumero(),
+                direccionEntity.getComuna(),
+                direccionEntity.getCiudad(),
+                direccionEntity.getRegion(),
+                direccionEntity.getCodigoPostal(),
+                direccionEntity.getReferencia()
+            );
+        }
+
         return new PedidoResponseDTO(
             pedido.getIdPedido(),
             pedido.getCliente().getIdCliente(),
@@ -193,7 +298,9 @@ public class PedidoService {
             pedido.getTotalBruto(),
             pedido.getDescuentoTotal(),
             pedido.getTotalNeto(),
-            pedido.getObservacion()
+            pedido.getObservacion(),
+            detallesDTO,
+            direccionDTO
         );
     }
 }

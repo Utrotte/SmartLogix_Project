@@ -2,6 +2,7 @@ package com.example.ms_pedidos_smartlogix.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class PedidoResponseDTO {
     private Long idPedido;
@@ -15,13 +16,16 @@ public class PedidoResponseDTO {
     private BigDecimal descuentoTotal;
     private BigDecimal totalNeto;
     private String observacion;
+    private List<DetallePedidoResponseDTO> detalles;
+    private DireccionEntregaResponseDTO direccionEntrega;
 
     public PedidoResponseDTO() {
     }
 
     public PedidoResponseDTO(Long idPedido, Long idCliente, String nombreCliente, String codigoPedido,
                              LocalDateTime fechaCreacion, String estadoActual, String canalOrigen,
-                             BigDecimal totalBruto, BigDecimal descuentoTotal, BigDecimal totalNeto, String observacion) {
+                             BigDecimal totalBruto, BigDecimal descuentoTotal, BigDecimal totalNeto, String observacion,
+                             List<DetallePedidoResponseDTO> detalles, DireccionEntregaResponseDTO direccionEntrega) {
         this.idPedido = idPedido;
         this.idCliente = idCliente;
         this.nombreCliente = nombreCliente;
@@ -121,5 +125,21 @@ public class PedidoResponseDTO {
 
     public void setObservacion(String observacion) {
         this.observacion = observacion;
+    }
+
+    public List<DetallePedidoResponseDTO> getDetalles() {
+        return detalles;
+    }
+
+    public void setDetalles(List<DetallePedidoResponseDTO> detalles) {
+        this.detalles = detalles;
+    }
+
+    public DireccionEntregaResponseDTO getDireccionEntrega() {
+        return direccionEntrega;
+    }
+
+    public void setDireccionEntrega(DireccionEntregaResponseDTO direccionEntrega) {
+        this.direccionEntrega = direccionEntrega;
     }
 }

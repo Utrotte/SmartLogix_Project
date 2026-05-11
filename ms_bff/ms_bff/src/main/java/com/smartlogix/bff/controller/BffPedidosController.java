@@ -17,13 +17,13 @@ public class BffPedidosController {
         this.pedidosService = pedidosService;
     }
 
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<List<?>> listarPedidos() {
         List<?> response = pedidosService.listarPedidos();
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<Object> crearPedido(@RequestBody Map<String, Object> request) {
         Object response = pedidosService.crearPedido(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -32,6 +32,12 @@ public class BffPedidosController {
     @GetMapping("/{idPedido}")
     public ResponseEntity<Object> buscarPedido(@PathVariable("idPedido") Long idPedido) {
         Object response = pedidosService.buscarPedido(idPedido);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/cliente/{idCliente}")
+    public ResponseEntity<List<?>> listarPedidosPorCliente(@PathVariable("idCliente") Long idCliente) {
+        List<?> response = pedidosService.listarPedidosPorCliente(idCliente);
         return ResponseEntity.ok(response);
     }
 

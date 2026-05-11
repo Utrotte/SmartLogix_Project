@@ -17,7 +17,11 @@ export interface Producto {
   nombreCategoria?: string
   descripcion?: string
   precioUnitario?: number
+  precioReferencia?: number
   sku?: string
+  codigoSku?: string
+  marca?: string
+  activo?: boolean
 }
 
 export interface CategoriaProducto {

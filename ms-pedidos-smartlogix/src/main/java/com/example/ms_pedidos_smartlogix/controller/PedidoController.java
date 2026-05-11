@@ -1,5 +1,6 @@
 package com.example.ms_pedidos_smartlogix.controller;
 
+import com.example.ms_pedidos_smartlogix.dto.CambiarEstadoPedidoRequestDTO;
 import com.example.ms_pedidos_smartlogix.dto.PedidoRequestDTO;
 import com.example.ms_pedidos_smartlogix.dto.PedidoResponseDTO;
 import com.example.ms_pedidos_smartlogix.service.PedidoService;
@@ -45,10 +46,8 @@ public class PedidoController {
     @PatchMapping("/{idPedido}/estado")
     public ResponseEntity<PedidoResponseDTO> cambiarEstadoPedido(
             @PathVariable Long idPedido,
-            @RequestParam String nuevoEstado,
-            @RequestParam String usuarioResponsable,
-            @RequestParam String observacion) {
-        PedidoResponseDTO response = pedidoService.cambiarEstadoPedido(idPedido, nuevoEstado, usuarioResponsable, observacion);
+            @RequestBody CambiarEstadoPedidoRequestDTO request) {
+        PedidoResponseDTO response = pedidoService.cambiarEstadoPedido(idPedido, request.getNuevoEstado(), request.getUsuarioResponsable(), request.getObservacion());
         return ResponseEntity.ok(response);
     }
 
