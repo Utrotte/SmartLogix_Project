@@ -20,7 +20,7 @@ export interface DetallePedido {
   nombreProductoSnapshot?: string
   cantidad: number
   precioUnitario: number
-  subtotal?: number
+  subtotal: number
   estadoDetalle?: string
 }
 

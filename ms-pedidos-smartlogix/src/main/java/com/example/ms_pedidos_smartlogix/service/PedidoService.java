@@ -87,6 +87,12 @@ public class PedidoService {
         BigDecimal totalBruto = BigDecimal.ZERO;
         if (dto.getDetalles() != null) {
             for (var det : dto.getDetalles()) {
+                if (det.getCantidad() == null || det.getCantidad() <= 0) {
+                    throw new BusinessException("La cantidad de cada detalle debe ser mayor a 0");
+                }
+                if (det.getPrecioUnitario() == null) {
+                    throw new BusinessException("El precio unitario de cada detalle es obligatorio");
+                }
                 BigDecimal cantidad = new BigDecimal(det.getCantidad());
                 BigDecimal sub = det.getPrecioUnitario().multiply(cantidad);
                 totalBruto = totalBruto.add(sub);
@@ -143,10 +149,10 @@ public class PedidoService {
             direccionEntregaRepository.save(direccion);
         }
 
-        // Crear registro en estado_pedido_historial con estado CREADO
+        // Crear registro en estado_pedido_historial con estado PENDIENTE_CONFIRMACION
         EstadoPedidoHistorial estadoHistorial = new EstadoPedidoHistorial(
             pedidoGuardado,
-            "CREADO",
+            "PENDIENTE_CONFIRMACION",
             "Pedido creado",
             "SISTEMA"
         );

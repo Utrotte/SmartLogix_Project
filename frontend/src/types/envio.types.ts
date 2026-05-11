@@ -17,7 +17,7 @@ export interface PaqueteEnvio {
 }
 
 export interface Transportista {
-  idTransportista: number
+  idTransportista: string
   nombre: string
   telefono?: string
   email?: string
@@ -26,7 +26,7 @@ export interface Transportista {
 }
 
 export interface SeguimientoEnvio {
-  idSeguimiento: number
+  idSeguimiento: string
   idEnvio: string
   estado: EstadoEnvio
   fecha: string
@@ -39,7 +39,7 @@ export interface Envio {
   idPedidoRef: string
   estado?: EstadoEnvio
   transportista?: string
-  idTransportista?: number
+  idTransportista?: string
   fechaCreacion?: string
   fechaAsignacion?: string
   fechaEntrega?: string
@@ -52,7 +52,7 @@ export interface EnvioResponse {
   idPedidoRef: string
   estado: EstadoEnvio
   transportista?: string
-  idTransportista?: number
+  idTransportista?: string
   fechaCreacion: string
   fechaAsignacion?: string
   fechaEntrega?: string
@@ -67,6 +67,7 @@ export interface EnvioListaItem {
   fechaCreacion: string
   fechaEntrega?: string
   direccion?: string
+  codigoEnvio?: string
 }
 
 export interface CrearEnvioRequest {
@@ -81,7 +82,7 @@ export interface CambiarEstadoEnvioRequest {
 }
 
 export interface AsignarTransportistaRequest {
-  idTransportista: number
+  idTransportista: string | number
 }
 
 export type EstadoEnvio =

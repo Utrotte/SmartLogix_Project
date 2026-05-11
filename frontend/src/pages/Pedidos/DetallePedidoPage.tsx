@@ -5,82 +5,143 @@ import { pedidosService, enviosService } from '@/services'
 import type { PedidoResponse, EnvioResponse } from '@/types'
 import CambiarEstadoPedidoModal from './CambiarEstadoPedidoModal'
 
+// Normaliza un pedido para leer campos con distintos nombres
+const normalizarPedido = (data: any): PedidoResponse => ({
+  idPedido: Number(data.idPedido ?? data.id_pedido ?? data.id ?? 0),
+  idCliente: Number(data.idCliente ?? data.id_cliente ?? 0),
+  nombreCliente:
+    data.nombreCliente ??
+    data.clienteNombre ??
+    (data.cliente
+      ? `${data.cliente.nombre ?? ''} ${data.cliente.apellido ?? ''}`.trim()
+      : null) ??
+    `Cliente #${data.idCliente ?? ''}`,
+  codigoPedido: data.codigoPedido ?? data.codigo_pedido ?? `PED-${data.idPedido}`,
+  fechaCreacion: data.fechaCreacion ?? data.fecha_creacion ?? data.fecha ?? new Date().toISOString(),
+  estadoActual:
+    data.estadoActual ??
+    data.estado ??
+    data.estadoPedido ??
+    data.estado_actual ??
+    'PENDIENTE_CONFIRMACION',
+  canalOrigen: data.canalOrigen ?? data.canal_origen ?? 'WEB',
+  totalBruto: Number(data.totalBruto ?? data.total_bruto ?? data.totalNeto ?? data.total ?? 0),
+  descuentoTotal: Number(data.descuentoTotal ?? data.descuento_total ?? 0),
+  totalNeto: Number(data.totalNeto ?? data.total_neto ?? data.total ?? data.montoTotal ?? 0),
+  observacion: data.observacion ?? null,
+  detalles: Array.isArray(data.detalles)
+    ? data.detalles
+    : Array.isArray(data.detallePedido)
+    ? data.detallePedido
+    : [],
+  direccionEntrega: data.direccionEntrega ?? data.direccion_entrega ?? data.direccion ?? null,
+})
+
 export default function DetallePedidoPage() {
-  const { id } = useParams<{ id: string }>()
+  // La ruta es /pedidos/:idPedido — leer el param correcto
+  const { idPedido: idPedidoParam } = useParams<{ idPedido: string }>()
   const navigate = useNavigate()
 
   const [pedido, setPedido] = useState<PedidoResponse | null>(null)
   const [envio, setEnvio] = useState<EnvioResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [showModal, setShowModal] = useState(false)
-  const [creatingShipment, setCreatingShipment] = useState(false)
 
   useEffect(() => {
     cargarDatos()
-  }, [id])
+  }, [idPedidoParam])
 
   const cargarDatos = async () => {
-    if (!id) return
+    console.log('Params detalle:', { idPedidoParam })
+
+    if (!idPedidoParam) {
+      setError('No se proporcionó un ID de pedido válido.')
+      setLoading(false)
+      return
+    }
+
+    const idNum = Number(idPedidoParam)
+    console.log('ID detalle parseado:', idNum)
+
+    if (isNaN(idNum) || idNum <= 0) {
+      setError(`ID de pedido inválido: "${idPedidoParam}"`)
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)
       setError(null)
 
-      // Cargar pedido
-      const pedidoData = await pedidosService.obtenerPedido(Number(id))
-      setPedido(pedidoData)
+      console.log('Cargando pedido con ID:', idNum)
 
-      // Intentar cargar envío si existe
+      // Cargar pedido
+      const pedidoRaw = await pedidosService.obtenerPedido(idNum)
+      console.log('Detalle pedido recibido (raw):', pedidoRaw)
+
+      if (!pedidoRaw) {
+        setError('No se encontró el pedido solicitado.')
+        return
+      }
+
+      const pedidoNorm = normalizarPedido(pedidoRaw)
+      console.log('Detalle pedido normalizado:', pedidoNorm)
+      setPedido(pedidoNorm)
+
+      // Intentar cargar envío — si falla no es error crítico
       try {
         const envioData = await enviosService.obtenerEnvioPorPedido(id)
         setEnvio(envioData)
-      } catch (err) {
-        // El envío podría no existir, no es un error crítico
-        console.log('No hay envío asociado a este pedido')
+      } catch (_envioErr) {
+        console.log('No hay envío asociado a este pedido (OK)')
+        setEnvio(null)
       }
-    } catch (err) {
-      setError('Error al cargar los datos del pedido')
-      console.error('Error:', err)
+    } catch (err: any) {
+      console.error('Error cargando detalle del pedido:', {
+        status: err?.response?.status,
+        data: err?.response?.data,
+        message: err?.message,
+        url: err?.config?.url,
+        method: err?.config?.method,
+      })
+      setError(
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        (typeof err?.response?.data === 'string' ? err.response.data : null) ||
+        (err?.response?.data ? JSON.stringify(err.response.data) : null) ||
+        err?.message ||
+        'No se pudieron cargar los detalles del pedido'
+      )
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleCrearEnvio = async () => {
-    if (!pedido) return
-
-    try {
-      setCreatingShipment(true)
-      // Aquí iría la lógica para crear envío
-      // Por ahora solo mostramos un mensaje
-      alert('Redirecciona a crear envío')
-      // navigate(`/envios/crear?idPedido=${pedido.idPedido}`)
-    } catch (err) {
-      console.error('Error:', err)
-    } finally {
-      setCreatingShipment(false)
     }
   }
 
   const getEstadoBadgeColor = (estado: string) => {
     switch (estado) {
       case 'PENDIENTE_CONFIRMACION':
-        return 'warning'
+      case 'PENDIENTE':
+      case 'CREADO':
+        return 'warning' as const
       case 'CONFIRMADO':
-        return 'success'
+        return 'success' as const
       case 'CANCELADO':
-        return 'danger'
+        return 'danger' as const
       case 'COMPLETADO':
-        return 'default'
+        return 'default' as const
       default:
-        return 'default'
+        return 'default' as const
     }
   }
 
   const getEstadoLabel = (estado: string) => {
     switch (estado) {
       case 'PENDIENTE_CONFIRMACION':
+      case 'CREADO':
+        return 'Pendiente'
+      case 'PENDIENTE':
         return 'Pendiente'
       case 'CONFIRMADO':
         return 'Confirmado'
@@ -132,6 +193,17 @@ export default function DetallePedidoPage() {
     )
   }
 
+  // Calcular total desde detalles si viene en 0
+  const calcTotalDeDetalles = () =>
+    (pedido.detalles || []).reduce((acc: number, d: any) => {
+      const sub =
+        Number(d.subtotal ?? d.subTotal ?? 0) ||
+        Number(d.precioUnitario ?? 0) * Number(d.cantidad ?? 0)
+      return acc + sub
+    }, 0)
+
+  const totalMostrar = pedido.totalNeto > 0 ? pedido.totalNeto : calcTotalDeDetalles()
+
   return (
     <div>
       {/* Header */}
@@ -164,7 +236,7 @@ export default function DetallePedidoPage() {
             onClick={() => setShowModal(true)}
             style={{
               padding: '10px 16px',
-              backgroundColor: 'var(--info)',
+              backgroundColor: '#0066CC',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
@@ -177,24 +249,40 @@ export default function DetallePedidoPage() {
           </button>
           {pedido.estadoActual === 'CONFIRMADO' && !envio && (
             <button
-              onClick={handleCrearEnvio}
-              disabled={creatingShipment}
+              onClick={() => navigate(`/envios/crear?idPedido=${pedido.idPedido}`)}
               style={{
                 padding: '10px 16px',
-                backgroundColor: creatingShipment ? 'var(--neutral-300)' : 'var(--success)',
+                backgroundColor: 'var(--success)',
                 color: 'white',
                 border: 'none',
                 borderRadius: '6px',
-                cursor: creatingShipment ? 'not-allowed' : 'pointer',
+                cursor: 'pointer',
                 fontSize: '14px',
                 fontWeight: '600',
               }}
             >
-              {creatingShipment ? 'Creando...' : '📦 Crear Envío'}
+              📦 Crear Envío
             </button>
           )}
         </div>
       </div>
+
+      {/* Success */}
+      {success && (
+        <div
+          style={{
+            backgroundColor: '#dcfce7',
+            color: '#166534',
+            padding: '12px 16px',
+            borderRadius: '6px',
+            marginBottom: '20px',
+            fontSize: '14px',
+            border: '1px solid #86efac',
+          }}
+        >
+          ✅ {success}
+        </div>
+      )}
 
       {/* Información principal */}
       <Card title="Información del Pedido" padding="20px" style={{ marginBottom: '20px' }}>
@@ -212,10 +300,10 @@ export default function DetallePedidoPage() {
 
           <div>
             <label style={{ fontSize: '12px', color: 'var(--neutral-600)', textTransform: 'uppercase', fontWeight: '600' }}>
-              ID Cliente
+              Cliente
             </label>
             <p style={{ margin: '8px 0 0 0', fontSize: '16px', fontWeight: '500', color: 'var(--neutral-900)' }}>
-              {pedido.idCliente}
+              {pedido.nombreCliente || `ID: ${pedido.idCliente}`}
             </p>
           </div>
 
@@ -237,7 +325,7 @@ export default function DetallePedidoPage() {
               Monto Total
             </label>
             <p style={{ margin: '8px 0 0 0', fontSize: '20px', fontWeight: '700', color: 'var(--primary)' }}>
-              ${pedido.totalNeto.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${totalMostrar.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
 
@@ -263,7 +351,7 @@ export default function DetallePedidoPage() {
                 Calle
               </label>
               <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--neutral-900)' }}>
-                {pedido.direccionEntrega.calle}
+                {pedido.direccionEntrega.calle} {pedido.direccionEntrega.numero}
               </p>
             </div>
             <div>
@@ -305,59 +393,67 @@ export default function DetallePedidoPage() {
       )}
 
       {/* Productos */}
-      <Card title="Productos" padding="0" style={{ marginBottom: '20px' }}>
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '14px',
-          }}
-        >
-          <thead>
-            <tr style={{ borderBottom: '2px solid var(--neutral-200)', backgroundColor: 'var(--neutral-50)' }}>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                ID Producto
-              </th>
-              <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                Nombre
-              </th>
-              <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                Cantidad
-              </th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                Precio Unitario
-              </th>
-              <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                Subtotal
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {pedido.detalles.map((detalle, index) => (
-              <tr key={index} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
-                <td style={{ padding: '12px 16px', color: 'var(--neutral-900)' }}>
-                  {detalle.idProductoRef}
-                </td>
-                <td style={{ padding: '12px 16px', color: 'var(--neutral-900)' }}>
-                  {detalle.nombreProductoSnapshot || 'N/A'}
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--neutral-900)' }}>
-                  {detalle.cantidad}
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--neutral-900)' }}>
-                  ${detalle.precioUnitario.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--neutral-900)', fontWeight: '500' }}>
-                  ${(detalle.cantidad * detalle.precioUnitario).toLocaleString('es-CL', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </td>
+      {pedido.detalles && pedido.detalles.length > 0 ? (
+        <Card title="Productos" padding="0" style={{ marginBottom: '20px' }}>
+          <table
+            style={{
+              width: '100%',
+              borderCollapse: 'collapse',
+              fontSize: '14px',
+            }}
+          >
+            <thead>
+              <tr style={{ borderBottom: '2px solid var(--neutral-200)', backgroundColor: 'var(--neutral-50)' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                  ID Producto
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                  Nombre
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                  Cantidad
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                  Precio Unitario
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                  Subtotal
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+            </thead>
+            <tbody>
+              {pedido.detalles.map((detalle: any, index: number) => {
+                const precio = Number(detalle.precioUnitario ?? detalle.precio_unitario ?? 0)
+                const cantidad = Number(detalle.cantidad ?? 0)
+                const subtotal = Number(detalle.subtotal ?? detalle.subTotal ?? 0) || precio * cantidad
+                return (
+                  <tr key={detalle.idDetalle ?? index} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
+                    <td style={{ padding: '12px 16px', color: 'var(--neutral-900)' }}>
+                      {detalle.idProductoRef ?? detalle.idProducto ?? '-'}
+                    </td>
+                    <td style={{ padding: '12px 16px', color: 'var(--neutral-900)' }}>
+                      {detalle.nombreProductoSnapshot ?? detalle.nombreProducto ?? 'N/A'}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--neutral-900)' }}>
+                      {cantidad}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--neutral-900)' }}>
+                      ${precio.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--neutral-900)', fontWeight: '500' }}>
+                      ${subtotal.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </Card>
+      ) : (
+        <Card title="Productos" padding="24px" style={{ marginBottom: '20px' }}>
+          <p style={{ color: 'var(--neutral-500)', margin: 0 }}>Sin detalles de productos.</p>
+        </Card>
+      )}
 
       {/* Envío asociado */}
       {envio && (
@@ -408,7 +504,11 @@ export default function DetallePedidoPage() {
           idPedido={pedido.idPedido}
           estadoActual={pedido.estadoActual}
           onClose={() => setShowModal(false)}
-          onSuccess={cargarDatos}
+          onSuccess={() => {
+            cargarDatos()
+            setSuccess('Estado actualizado correctamente.')
+            setTimeout(() => setSuccess(null), 4000)
+          }}
         />
       )}
     </div>

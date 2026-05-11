@@ -161,7 +161,7 @@ export default function SeguimientoEnvioPage() {
                   <div style={{ paddingTop: '2px', flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                       <h3 style={{ margin: '0', color: 'var(--neutral-900)', fontSize: '16px', fontWeight: '600' }}>
-                        {getEstadoLabel(evento.estado)}
+                        {evento.observacion || getEstadoLabel(evento.estado)}
                       </h3>
                       <Badge variant={getEstadoBadgeColor(evento.estado)}>{evento.estado}</Badge>
                     </div>
@@ -183,11 +183,6 @@ export default function SeguimientoEnvioPage() {
                       </p>
                     )}
 
-                    {evento.observacion && (
-                      <p style={{ margin: '0', color: 'var(--neutral-700)', fontSize: '14px' }}>
-                        <strong>📋 Observación:</strong> {evento.observacion}
-                      </p>
-                    )}
                   </div>
                 </div>
               ))}

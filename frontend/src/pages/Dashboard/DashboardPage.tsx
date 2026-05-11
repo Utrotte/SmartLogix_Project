@@ -29,6 +29,13 @@ export default function DashboardPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
+    const token = localStorage.getItem('smartlogix_token')
+    if (!token) {
+      console.log('No hay token, no se cargan datos protegidos del dashboard.')
+      setLoading(false)
+      return
+    }
+
     const cargarDatos = async () => {
       setLoading(true)
       const newErrors: Record<string, string> = {}

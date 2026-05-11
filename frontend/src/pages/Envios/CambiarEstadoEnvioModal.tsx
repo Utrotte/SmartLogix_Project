@@ -58,14 +58,33 @@ export default function CambiarEstadoEnvioModal({ envio, onClose, onSuccess }: P
     try {
       setLoading(true)
       setError(null)
-      await enviosService.cambiarEstado(envio.idEnvio, {
-        nuevoEstado,
+      
+      const request = {
+        estadoEnvio: nuevoEstado,
         observacion,
-      })
+      }
+
+      console.log("Frontend -> cambiar estado envío:", {
+        idEnvio: envio.idEnvio,
+        request,
+      });
+
+      await enviosService.cambiarEstado(envio.idEnvio, request as any)
       onSuccess()
     } catch (err: any) {
-      setError('Error al cambiar el estado. Intenta nuevamente.')
-      console.error('Error:', err)
+      console.error("Error API envíos:", {
+        status: err?.response?.status,
+        data: err?.response?.data,
+        url: err?.config?.url,
+        method: err?.config?.method,
+        message: err.message,
+      });
+      const data = err?.response?.data;
+      let msg = 'Error al cambiar el estado del envío. Intenta nuevamente.';
+      if (typeof data === 'string' && data.trim()) msg = data;
+      else if (data?.message) msg = data.message;
+      else if (data?.error) msg = data.error;
+      setError(msg)
     } finally {
       setLoading(false)
     }

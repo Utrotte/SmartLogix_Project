@@ -70,7 +70,7 @@ public class Pedido {
             fechaCreacion = LocalDateTime.now();
         }
         if (estadoActual == null) {
-            estadoActual = "CREADO";
+            estadoActual = "PENDIENTE_CONFIRMACION";
         }
         if (totalBruto == null) {
             totalBruto = BigDecimal.ZERO;

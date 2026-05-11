@@ -31,10 +31,13 @@ public interface PedidosClient {
     Object actualizarPedido(@PathVariable("idPedido") Long idPedido,
                            @RequestBody Map<String, Object> request);
 
-    @PatchMapping("/{idPedido}/cancelar")
+    @PutMapping("/{idPedido}/cancelar")
     Object cancelarPedido(@PathVariable("idPedido") Long idPedido);
 
-    @PatchMapping("/{idPedido}/estado")
+    @PutMapping("/{idPedido}/estado")
     Object cambiarEstadoPedido(@PathVariable("idPedido") Long idPedido,
                               @RequestBody Map<String, Object> request);
+
+    @DeleteMapping("/{idPedido}")
+    void eliminarPedido(@PathVariable("idPedido") Long idPedido);
 }

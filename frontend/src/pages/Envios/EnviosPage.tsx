@@ -24,19 +24,37 @@ export default function EnviosPage() {
     cargarEnvios()
   }, [])
 
+  const normalizarEstadoEnvio = (estado?: string) => {
+    if (!estado) return "PENDIENTE_ASIGNACION";
+
+    const upper = estado.trim().toUpperCase()
+      .replaceAll(" ", "_")
+      .replaceAll("Á", "A")
+      .replaceAll("É", "E")
+      .replaceAll("Í", "I")
+      .replaceAll("Ó", "O")
+      .replaceAll("Ú", "U");
+
+    if (upper === "PENDIENTE") return "PENDIENTE_ASIGNACION";
+    if (upper === "EN_TRANSITO") return "EN_TRANSITO";
+
+    return upper;
+  };
+
   useEffect(() => {
     let filtered = envios
 
     if (estadoFilter !== 'TODOS') {
-      filtered = filtered.filter((e) => e.estado === estadoFilter)
+      filtered = filtered.filter((e) => normalizarEstadoEnvio(e.estado) === estadoFilter)
     }
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter(
         (e) =>
-          e.idEnvio.toLowerCase().includes(term) ||
-          e.idPedidoRef.toLowerCase().includes(term)
+          (e.idEnvio && e.idEnvio.toLowerCase().includes(term)) ||
+          (e.idPedidoRef && e.idPedidoRef.toLowerCase().includes(term)) ||
+          (e.codigoEnvio && e.codigoEnvio.toLowerCase().includes(term))
       )
     }
 
@@ -260,7 +278,9 @@ export default function EnviosPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredEnvios.map((envio) => (
+                {filteredEnvios.map((envio) => {
+                  const estadoNormalizado = normalizarEstadoEnvio(envio.estado);
+                  return (
                   <tr
                     key={envio.idEnvio}
                     style={{
@@ -277,8 +297,8 @@ export default function EnviosPage() {
                       {envio.transportista || 'Sin asignar'}
                     </td>
                     <td style={{ padding: '12px 16px' }}>
-                      <Badge variant={getEstadoBadgeColor(envio.estado)}>
-                        {getEstadoLabel(envio.estado)}
+                      <Badge variant={getEstadoBadgeColor(estadoNormalizado as EstadoEnvio)}>
+                        {getEstadoLabel(estadoNormalizado as EstadoEnvio)}
                       </Badge>
                     </td>
                     <td style={{ padding: '12px 16px', color: 'var(--neutral-700)', fontSize: '13px' }}>
@@ -345,7 +365,8 @@ export default function EnviosPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

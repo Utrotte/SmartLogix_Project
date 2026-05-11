@@ -10,7 +10,7 @@ interface Props {
 
 export default function AsignarTransportistaModal({ envio, onClose, onSuccess }: Props) {
   const [transportistas, setTransportistas] = useState<Transportista[]>([])
-  const [selectedTransportista, setSelectedTransportista] = useState<number | ''>('')
+  const [selectedTransportista, setSelectedTransportista] = useState<string>('')
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +47,7 @@ export default function AsignarTransportistaModal({ envio, onClose, onSuccess }:
       setSubmitting(true)
       setError(null)
       await enviosService.asignarTransportista(envio.idEnvio, {
-        idTransportista: selectedTransportista as number,
+        idTransportista: selectedTransportista,
       })
       onSuccess()
     } catch (err: any) {
@@ -115,7 +115,7 @@ export default function AsignarTransportistaModal({ envio, onClose, onSuccess }:
               </label>
               <select
                 value={selectedTransportista}
-                onChange={(e) => setSelectedTransportista(Number(e.target.value) || '')}
+                onChange={(e) => setSelectedTransportista(e.target.value)}
                 style={{
                   width: '100%',
                   padding: '8px 12px',

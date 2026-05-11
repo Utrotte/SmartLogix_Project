@@ -1,10 +1,12 @@
 package cl.programadormaldito.ms_envios.service;
 
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import cl.programadormaldito.ms_envios.dto.DireccionEnvioResponseDTO;
 import cl.programadormaldito.ms_envios.dto.EnvioRequestDTO;
 import cl.programadormaldito.ms_envios.dto.EnvioResponseDTO;
 import cl.programadormaldito.ms_envios.model.DireccionEnvio;
@@ -92,12 +94,38 @@ public class EnvioService {
     private EnvioResponseDTO construirRespuesta(Envio envio) {
         EnvioResponseDTO respuesta = new EnvioResponseDTO();
         respuesta.setId(envio.getId());
+        respuesta.setIdEnvio(envio.getId());
         respuesta.setIdPedidoRef(envio.getIdPedidoRef());
         respuesta.setCodigoEnvio(envio.getCodigoEnvio());
         respuesta.setEstado(envio.getEstado());
         respuesta.setFechaProgramada(envio.getFechaProgramada());
         respuesta.setFechaEstimada(envio.getFechaEstimada());
         respuesta.setCostoTotal(envio.getCostoTotal());
+
+        if (envio.getFechaProgramada() != null) {
+            respuesta.setFechaCreacion(
+                    envio.getFechaProgramada().atStartOfDay(ZoneOffset.UTC).toInstant().toString());
+        } else if (envio.getFechaEstimada() != null) {
+            respuesta.setFechaCreacion(
+                    envio.getFechaEstimada().atStartOfDay(ZoneOffset.UTC).toInstant().toString());
+        } else {
+            respuesta.setFechaCreacion(java.time.Instant.now().toString());
+        }
+
+        DireccionEnvioResponseDTO dirDto = new DireccionEnvioResponseDTO();
+        DireccionEnvio dir = envio.getDireccionEnvio();
+        if (dir != null) {
+            dirDto.setCalle(dir.getCalle());
+            dirDto.setCiudad(dir.getCiudad());
+            dirDto.setRegion(dir.getRegion());
+            dirDto.setCodigoPostal(dir.getNumero() != null && !dir.getNumero().isBlank() ? dir.getNumero() : "");
+        } else {
+            dirDto.setCalle("");
+            dirDto.setCiudad("");
+            dirDto.setRegion("");
+            dirDto.setCodigoPostal("");
+        }
+        respuesta.setDireccion(dirDto);
 
         // solo si ya tiene transportista asignado
         if (envio.getTransportista() != null) {
@@ -172,18 +200,29 @@ public class EnvioService {
         return construirRespuesta(envio);
     }
 
-    public EnvioResponseDTO envioActualizarEstado(String id, String nuevoEstado) {
+    public EnvioResponseDTO envioActualizarEstado(String id, String nuevoEstado, String observacion) {
         Envio envio = this.envioRepository.findById(id).orElse(null);
 
         if (envio == null) {
-            return null;
+            throw new cl.programadormaldito.ms_envios.exception.BusinessException("Envío no encontrado con ID: " + id);
+        }
+
+        if (!List.of("PENDIENTE", "PENDIENTE_ASIGNACION", "ASIGNADO", "EN_TRANSITO", "ENTREGADO", "INCIDENCIA")
+                .contains(nuevoEstado)) {
+            throw new cl.programadormaldito.ms_envios.exception.BusinessException("Estado no válido: " + nuevoEstado);
         }
 
         envio.setEstado(nuevoEstado);
         this.envioRepository.save(envio);
 
-        // deja registro del cambio de estado en el outbox
-        EventoOutboxEnvio evento = construirEventoOutbox(envio.getId(), "ESTADO_ACTUALIZADO_" + nuevoEstado);
+        // deja registro del cambio de estado en el outbox, incluyendo la observacion
+        String payload = String.format("{\"idEnvio\":\"%s\",\"evento\":\"ESTADO_ACTUALIZADO_%s\",\"observacion\":\"%s\"}", 
+                                       envio.getId(), nuevoEstado, observacion != null ? observacion : "");
+        
+        EventoOutboxEnvio evento = new EventoOutboxEnvio();
+        evento.setIdEnvioRef(envio.getId());
+        evento.setTipoEvento("ESTADO_ACTUALIZADO_" + nuevoEstado);
+        evento.setPayload(payload);
         this.eventoOutboxEnvioRepository.save(evento);
 
         return construirRespuesta(envio);

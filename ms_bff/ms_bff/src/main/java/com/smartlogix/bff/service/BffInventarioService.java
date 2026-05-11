@@ -2,6 +2,7 @@ package com.smartlogix.bff.service;
 
 import com.smartlogix.bff.client.InventarioClient;
 import com.smartlogix.bff.exception.ExternalServiceException;
+import feign.FeignException;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
@@ -180,10 +181,17 @@ public class BffInventarioService {
     }
 
     public Object ajustarStock(Long idExistencia, Map<String, Object> request) {
+        System.out.println("BFF -> idExistencia ajustar stock: " + idExistencia);
+        System.out.println("BFF -> Request ajustar stock: " + request);
         try {
             return inventarioClient.ajustarStock(idExistencia, request);
+        } catch (FeignException e) {
+            String body = e.contentUTF8();
+            System.err.println("Error BFF al ajustar stock (Feign): status=" + e.status() + " body=" + body);
+            throw new ExternalServiceException("Error desde ms_inventario al ajustar stock: " + body, e);
         } catch (Exception e) {
-            throw new ExternalServiceException("No se pudo ajustar el stock", e);
+            System.err.println("Error BFF al ajustar stock: " + e.getMessage());
+            throw new ExternalServiceException("No se pudo ajustar el stock: " + e.getMessage(), e);
         }
     }
 

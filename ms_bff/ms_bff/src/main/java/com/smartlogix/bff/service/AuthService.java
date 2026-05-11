@@ -62,7 +62,7 @@ public class AuthService {
                 .userAgent(userAgent)
                 .build();
         
-        sesionRepository.save(sesion);
+        sesionRepository.saveAndFlush(sesion);
         
         // Construir respuesta
         List<String> roles = usuario.getUsuarioRoles().stream()

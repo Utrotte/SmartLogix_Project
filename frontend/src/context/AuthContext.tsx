@@ -15,20 +15,15 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [usuario, setUsuario] = useState<UsuarioSesion | null>(null)
-  const [token, setToken] = useState<string | null>(null)
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('smartlogix_token'))
+  const [usuario, setUsuario] = useState<UsuarioSesion | null>(() => {
+    const stored = localStorage.getItem('smartlogix_user')
+    return stored ? JSON.parse(stored) : null
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Cargar usuario y token del localStorage al iniciar
-  useEffect(() => {
-    const storedToken = localStorage.getItem('sessionToken')
-    const storedUsuario = localStorage.getItem('usuario')
-    if (storedToken && storedUsuario) {
-      setToken(storedToken)
-      setUsuario(JSON.parse(storedUsuario))
-    }
-  }, [])
+  // Ya no necesitamos useEffect para la carga inicial porque lo hicimos en la inicializacion de useState.
 
   const login = async (correo: string, password: string) => {
     setIsLoading(true)
@@ -38,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const response = await authService.login(credentials)
       
       // Guardar token y usuario en localStorage
-      localStorage.setItem('sessionToken', response.tokenReferencia)
+      localStorage.setItem('smartlogix_token', response.tokenReferencia)
       const usuarioData: UsuarioSesion = {
         idUsuario: response.idUsuario,
         nombre: response.nombre,
@@ -46,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         roles: response.roles,
         fechaExpiracion: response.fechaExpiracion,
       }
-      localStorage.setItem('usuario', JSON.stringify(usuarioData))
+      localStorage.setItem('smartlogix_user', JSON.stringify(usuarioData))
       
       // Actualizar estado
       setToken(response.tokenReferencia)
@@ -69,8 +64,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUsuario(null)
       setToken(null)
-      localStorage.removeItem('sessionToken')
-      localStorage.removeItem('usuario')
+      localStorage.removeItem('smartlogix_token')
+      localStorage.removeItem('smartlogix_user')
       setIsLoading(false)
     }
   }
