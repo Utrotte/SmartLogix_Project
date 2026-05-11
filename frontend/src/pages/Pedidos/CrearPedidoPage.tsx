@@ -1,37 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card } from '@/components/UI'
-import { pedidosService } from '@/services'
-import type { DetallePedido, DireccionEntrega, Pedido } from '@/types'
+import { pedidosService, inventarioService } from '@/services'
+import type { DetallePedido, DireccionEntrega, Pedido, Producto } from '@/types'
 
 export default function CrearPedidoPage() {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [productos, setProductos] = useState<Producto[]>([])
 
-  // Formulario
-  const [idCliente, setIdCliente] = useState<number | string>('')
-  const [nombreCliente, setNombreCliente] = useState('')
+  // Cargar productos al montar
+  useEffect(() => {
+    const cargarProductos = async () => {
+      try {
+        const data = await inventarioService.listarProductos()
+        setProductos(data)
+      } catch (err) {
+        console.error('Error cargando productos:', err)
+        setError('No se pudieron cargar los productos del inventario')
+      }
+    }
+    cargarProductos()
+  }, [])
+
+  // Datos del cliente
+  const [cliente, setCliente] = useState({
+    nombre: '',
+    apellido: '',
+    correo: '',
+    telefono: '',
+    documento: '',
+  })
   const [observacion, setObservacion] = useState('')
 
   // Dirección de entrega
   const [direccion, setDireccion] = useState<DireccionEntrega>({
     calle: '',
+    numero: '',
+    comuna: '',
     ciudad: '',
     region: '',
     codigoPostal: '',
-    instruccionesEspeciales: '',
+    referencia: '',
   })
 
   // Productos
   const [detalles, setDetalles] = useState<DetallePedido[]>([
-    { idProducto: 0, nombreProducto: '', cantidad: 1, precioUnitario: 0 },
+    { idProductoRef: 0, codigoSkuRef: '', nombreProductoSnapshot: '', cantidad: 1, precioUnitario: 0 },
   ])
 
   const handleAgregarProducto = () => {
     setDetalles([
       ...detalles,
-      { idProducto: 0, nombreProducto: '', cantidad: 1, precioUnitario: 0 },
+      { idProductoRef: 0, codigoSkuRef: '', nombreProductoSnapshot: '', cantidad: 1, precioUnitario: 0 },
     ])
   }
 
@@ -45,6 +67,10 @@ export default function CrearPedidoPage() {
     setDetalles(newDetalles)
   }
 
+  const handleClienteChange = (field: string, value: string) => {
+    setCliente({ ...cliente, [field]: value })
+  }
+
   const handleDireccionChange = (field: string, value: string) => {
     setDireccion({ ...direccion, [field]: value })
   }
@@ -56,8 +82,8 @@ export default function CrearPedidoPage() {
   }
 
   const validarFormulario = (): boolean => {
-    if (!idCliente) {
-      setError('El ID del cliente es requerido')
+    if (!cliente.nombre || !cliente.apellido || !cliente.correo) {
+      setError('Nombre, apellido y correo del cliente son requeridos')
       return false
     }
 
@@ -67,8 +93,8 @@ export default function CrearPedidoPage() {
     }
 
     for (const detalle of detalles) {
-      if (!detalle.idProducto || detalle.idProducto === 0) {
-        setError('Todos los productos deben tener un ID')
+      if (!detalle.idProductoRef || detalle.idProductoRef === 0) {
+        setError('Todos los productos deben tener un ID de referencia')
         return false
       }
       if (detalle.cantidad <= 0) {
@@ -81,8 +107,8 @@ export default function CrearPedidoPage() {
       }
     }
 
-    if (!direccion.calle || !direccion.ciudad || !direccion.region) {
-      setError('Debes completar los datos de dirección')
+    if (!direccion.calle || !direccion.numero || !direccion.comuna || !direccion.ciudad || !direccion.region) {
+      setError('Debes completar los datos básicos de dirección (calle, número, comuna, ciudad, región)')
       return false
     }
 
@@ -98,18 +124,21 @@ export default function CrearPedidoPage() {
     try {
       setLoading(true)
 
+      const totalBruto = calcularTotal()
       const nuevoPedido: Pedido = {
-        idCliente: Number(idCliente),
-        nombreCliente: nombreCliente || undefined,
-        montoTotal: calcularTotal(),
+        cliente,
+        canalOrigen: 'WEB',
         observacion,
         detalles: detalles.map((d) => ({
           ...d,
-          idProducto: Number(d.idProducto),
+          idProductoRef: Number(d.idProductoRef),
           cantidad: Number(d.cantidad),
           precioUnitario: Number(d.precioUnitario),
         })),
         direccionEntrega: direccion,
+        totalBruto: totalBruto,
+        descuentoTotal: 0,
+        totalNeto: totalBruto,
       }
 
       const response = await pedidosService.crearPedido(nuevoPedido)
@@ -157,13 +186,14 @@ export default function CrearPedidoPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                ID del Cliente *
+                Nombre *
               </label>
               <input
-                type="number"
+                type="text"
                 required
-                value={idCliente}
-                onChange={(e) => setIdCliente(e.target.value)}
+                value={cliente.nombre}
+                onChange={(e) => handleClienteChange('nombre', e.target.value)}
+                placeholder="Ej: Juan"
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -175,13 +205,69 @@ export default function CrearPedidoPage() {
             </div>
             <div>
               <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                Nombre del Cliente (opcional)
+                Apellido *
               </label>
               <input
                 type="text"
-                value={nombreCliente}
-                onChange={(e) => setNombreCliente(e.target.value)}
-                placeholder="Ej: Juan González"
+                required
+                value={cliente.apellido}
+                onChange={(e) => handleClienteChange('apellido', e.target.value)}
+                placeholder="Ej: González"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--neutral-300)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                Correo *
+              </label>
+              <input
+                type="email"
+                required
+                value={cliente.correo}
+                onChange={(e) => handleClienteChange('correo', e.target.value)}
+                placeholder="Ej: juan@test.cl"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--neutral-300)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                Teléfono (opcional)
+              </label>
+              <input
+                type="text"
+                value={cliente.telefono}
+                onChange={(e) => handleClienteChange('telefono', e.target.value)}
+                placeholder="Ej: 999999999"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--neutral-300)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                Documento (opcional)
+              </label>
+              <input
+                type="text"
+                value={cliente.documento}
+                onChange={(e) => handleClienteChange('documento', e.target.value)}
+                placeholder="Ej: 11111111-1"
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -216,7 +302,7 @@ export default function CrearPedidoPage() {
         {/* Dirección de entrega */}
         <Card title="Dirección de Entrega" padding="20px" style={{ marginBottom: '20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div>
               <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
                 Calle *
               </label>
@@ -225,7 +311,45 @@ export default function CrearPedidoPage() {
                 required
                 value={direccion.calle}
                 onChange={(e) => handleDireccionChange('calle', e.target.value)}
-                placeholder="Ej: Av. Principal 123"
+                placeholder="Ej: Av. Principal"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--neutral-300)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                Número *
+              </label>
+              <input
+                type="text"
+                required
+                value={direccion.numero}
+                onChange={(e) => handleDireccionChange('numero', e.target.value)}
+                placeholder="Ej: 123"
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid var(--neutral-300)',
+                  borderRadius: '6px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
+                Comuna *
+              </label>
+              <input
+                type="text"
+                required
+                value={direccion.comuna}
+                onChange={(e) => handleDireccionChange('comuna', e.target.value)}
+                placeholder="Ej: Santiago Centro"
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -294,11 +418,11 @@ export default function CrearPedidoPage() {
             </div>
             <div style={{ gridColumn: '1 / -1' }}>
               <label style={{ display: 'block', fontSize: '14px', marginBottom: '8px', fontWeight: '600', color: 'var(--neutral-700)' }}>
-                Instrucciones Especiales (opcional)
+                Referencia / Instrucciones (opcional)
               </label>
               <textarea
-                value={direccion.instruccionesEspeciales || ''}
-                onChange={(e) => handleDireccionChange('instruccionesEspeciales', e.target.value)}
+                value={direccion.referencia || ''}
+                onChange={(e) => handleDireccionChange('referencia', e.target.value)}
                 placeholder="Ej: Dejar en recepción, timbre 2 veces"
                 rows={2}
                 style={{
@@ -350,13 +474,17 @@ export default function CrearPedidoPage() {
                 {detalles.map((detalle, index) => (
                   <tr key={index} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
                     <td style={{ padding: '10px' }}>
-                      <input
-                        type="number"
+                      <select
                         required
-                        min="1"
-                        value={detalle.idProducto || ''}
-                        onChange={(e) => handleProductoChange(index, 'idProducto', e.target.value)}
-                        placeholder="Ej: 1"
+                        value={detalle.idProductoRef || ''}
+                        onChange={(e) => {
+                          const producto = productos.find((p) => p.idProducto === Number(e.target.value))
+                          handleProductoChange(index, 'idProductoRef', Number(e.target.value))
+                          if (producto) {
+                            handleProductoChange(index, 'nombreProductoSnapshot', producto.nombre)
+                            handleProductoChange(index, 'precioUnitario', (producto.precioReferencia || producto.precioUnitario || 0) as number)
+                          }
+                        }}
                         style={{
                           width: '100%',
                           padding: '8px',
@@ -364,13 +492,20 @@ export default function CrearPedidoPage() {
                           borderRadius: '4px',
                           fontSize: '13px',
                         }}
-                      />
+                      >
+                        <option value="">Seleccionar producto</option>
+                        {productos.map((p) => (
+                          <option key={p.idProducto} value={p.idProducto}>
+                            {p.nombre}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td style={{ padding: '10px' }}>
                       <input
                         type="text"
-                        value={detalle.nombreProducto || ''}
-                        onChange={(e) => handleProductoChange(index, 'nombreProducto', e.target.value)}
+                        value={detalle.nombreProductoSnapshot || ''}
+                        onChange={(e) => handleProductoChange(index, 'nombreProductoSnapshot', e.target.value)}
                         placeholder="Nombre (opcional)"
                         style={{
                           width: '100%',

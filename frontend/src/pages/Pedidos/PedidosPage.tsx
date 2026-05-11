@@ -36,7 +36,7 @@ export default function PedidosPage() {
       filtered = filtered.filter(
         (p) =>
           p.idPedido.toString().includes(term) ||
-          p.numeroReferencia.toLowerCase().includes(term)
+          p.codigoPedido.toLowerCase().includes(term)
       )
     }
 
@@ -262,7 +262,7 @@ export default function PedidosPage() {
                     {pedido.idPedido}
                   </td>
                   <td style={{ padding: '12px 16px', color: 'var(--neutral-900)', fontWeight: '500' }}>
-                    {pedido.numeroReferencia}
+                    {pedido.codigoPedido}
                   </td>
                   <td style={{ padding: '12px 16px', color: 'var(--neutral-700)' }}>
                     {pedido.nombreCliente || `Cliente #${pedido.idCliente}`}
@@ -273,7 +273,7 @@ export default function PedidosPage() {
                     </Badge>
                   </td>
                   <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--neutral-900)', fontWeight: '500' }}>
-                    ${pedido.montoTotal.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ${pedido.totalNeto.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </td>
                   <td style={{ padding: '12px 16px', color: 'var(--neutral-700)', fontSize: '13px' }}>
                     {new Date(pedido.fechaCreacion).toLocaleDateString('es-CL')}

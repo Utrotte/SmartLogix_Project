@@ -23,6 +23,14 @@ public class BffPedidosService {
         }
     }
 
+    public List<?> listarPedidosPorCliente(Long idCliente) {
+        try {
+            return pedidosClient.listarPedidosPorCliente(idCliente);
+        } catch (Exception e) {
+            throw new ExternalServiceException("No se pudo obtener los pedidos del cliente", e);
+        }
+    }
+
     public Object crearPedido(Map<String, Object> request) {
         try {
             return pedidosClient.crearPedido(request);

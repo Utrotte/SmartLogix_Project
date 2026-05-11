@@ -2,35 +2,42 @@ package com.example.ms_pedidos_smartlogix.dto;
 
 import java.math.BigDecimal;
 
+import java.util.List;
+
 public class PedidoRequestDTO {
-    private Long idCliente;
+    private ClienteRequestDTO cliente;
     private String codigoPedido;
     private String canalOrigen;
     private BigDecimal totalBruto;
     private BigDecimal descuentoTotal;
     private BigDecimal totalNeto;
     private String observacion;
+    private List<DetallePedidoRequestDTO> detalles;
+    private DireccionEntregaRequestDTO direccionEntrega;
 
     public PedidoRequestDTO() {
     }
 
-    public PedidoRequestDTO(Long idCliente, String codigoPedido, String canalOrigen, 
-                            BigDecimal totalBruto, BigDecimal descuentoTotal, BigDecimal totalNeto, String observacion) {
-        this.idCliente = idCliente;
+    public PedidoRequestDTO(ClienteRequestDTO cliente, String codigoPedido, String canalOrigen, 
+                            BigDecimal totalBruto, BigDecimal descuentoTotal, BigDecimal totalNeto, String observacion,
+                            List<DetallePedidoRequestDTO> detalles, DireccionEntregaRequestDTO direccionEntrega) {
+        this.cliente = cliente;
         this.codigoPedido = codigoPedido;
         this.canalOrigen = canalOrigen;
         this.totalBruto = totalBruto;
         this.descuentoTotal = descuentoTotal;
         this.totalNeto = totalNeto;
         this.observacion = observacion;
+        this.detalles = detalles;
+        this.direccionEntrega = direccionEntrega;
     }
 
-    public Long getIdCliente() {
-        return idCliente;
+    public ClienteRequestDTO getCliente() {
+        return cliente;
     }
 
-    public void setIdCliente(Long idCliente) {
-        this.idCliente = idCliente;
+    public void setCliente(ClienteRequestDTO cliente) {
+        this.cliente = cliente;
     }
 
     public String getCodigoPedido() {
@@ -79,5 +86,21 @@ public class PedidoRequestDTO {
 
     public void setObservacion(String observacion) {
         this.observacion = observacion;
+    }
+
+    public List<DetallePedidoRequestDTO> getDetalles() {
+        return detalles;
+    }
+
+    public void setDetalles(List<DetallePedidoRequestDTO> detalles) {
+        this.detalles = detalles;
+    }
+
+    public DireccionEntregaRequestDTO getDireccionEntrega() {
+        return direccionEntrega;
+    }
+
+    public void setDireccionEntrega(DireccionEntregaRequestDTO direccionEntrega) {
+        this.direccionEntrega = direccionEntrega;
     }
 }

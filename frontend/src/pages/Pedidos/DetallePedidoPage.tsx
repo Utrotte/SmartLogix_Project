@@ -153,7 +153,7 @@ export default function DetallePedidoPage() {
             ← Volver a Pedidos
           </button>
           <h1 style={{ margin: '0 0 10px 0', color: 'var(--neutral-900)' }}>
-            Pedido {pedido.numeroReferencia}
+            Pedido {pedido.codigoPedido}
           </h1>
           <p style={{ margin: '0', color: 'var(--neutral-600)', fontSize: '16px' }}>
             ID: {pedido.idPedido}
@@ -237,7 +237,7 @@ export default function DetallePedidoPage() {
               Monto Total
             </label>
             <p style={{ margin: '8px 0 0 0', fontSize: '20px', fontWeight: '700', color: 'var(--primary)' }}>
-              ${pedido.montoTotal.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              ${pedido.totalNeto.toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
 
@@ -290,13 +290,13 @@ export default function DetallePedidoPage() {
                 {pedido.direccionEntrega.codigoPostal}
               </p>
             </div>
-            {pedido.direccionEntrega.instruccionesEspeciales && (
+            {pedido.direccionEntrega.referencia && (
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ fontSize: '12px', color: 'var(--neutral-600)', fontWeight: '600' }}>
-                  Instrucciones Especiales
+                  Referencia
                 </label>
                 <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--neutral-900)' }}>
-                  {pedido.direccionEntrega.instruccionesEspeciales}
+                  {pedido.direccionEntrega.referencia}
                 </p>
               </div>
             )}
@@ -336,10 +336,10 @@ export default function DetallePedidoPage() {
             {pedido.detalles.map((detalle, index) => (
               <tr key={index} style={{ borderBottom: '1px solid var(--neutral-200)' }}>
                 <td style={{ padding: '12px 16px', color: 'var(--neutral-900)' }}>
-                  {detalle.idProducto}
+                  {detalle.idProductoRef}
                 </td>
                 <td style={{ padding: '12px 16px', color: 'var(--neutral-900)' }}>
-                  {detalle.nombreProducto || 'N/A'}
+                  {detalle.nombreProductoSnapshot || 'N/A'}
                 </td>
                 <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--neutral-900)' }}>
                   {detalle.cantidad}

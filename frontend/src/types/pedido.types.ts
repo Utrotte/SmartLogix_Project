@@ -5,53 +5,66 @@
 export interface DireccionEntrega {
   idDireccion?: number
   calle: string
+  numero: string
+  comuna: string
   ciudad: string
   region: string
   codigoPostal: string
-  instruccionesEspeciales?: string
+  referencia?: string
 }
 
 export interface DetallePedido {
   idDetalle?: number
-  idProducto: number
-  nombreProducto?: string
+  idProductoRef: number
+  codigoSkuRef?: string
+  nombreProductoSnapshot?: string
   cantidad: number
   precioUnitario: number
   subtotal?: number
+  estadoDetalle?: string
+}
+
+export interface ClienteRequest {
+  nombre: string
+  apellido: string
+  correo: string
+  telefono: string
+  documento: string
 }
 
 export interface Pedido {
   idPedido?: number
-  idCliente: number
-  nombreCliente?: string
-  numeroReferencia?: string
-  estadoActual?: string
-  fechaCreacion?: string
-  fechaConfirmacion?: string
-  montoTotal: number
+  cliente: ClienteRequest
+  canalOrigen?: string
+  descuentoTotal?: number
   observacion?: string
   detalles: DetallePedido[]
   direccionEntrega: DireccionEntrega
+  totalBruto?: number
+  totalNeto?: number
 }
 
 export interface PedidoListaItem {
   idPedido: number
-  numeroReferencia: string
+  codigoPedido: string
   idCliente: number
   nombreCliente?: string
   estadoActual: string
   fechaCreacion: string
-  montoTotal: number
+  totalNeto: number
 }
 
 export interface PedidoResponse {
   idPedido: number
-  numeroReferencia: string
   idCliente: number
-  estadoActual: string
+  nombreCliente: string
+  codigoPedido: string
   fechaCreacion: string
-  fechaConfirmacion?: string
-  montoTotal: number
+  estadoActual: string
+  canalOrigen: string
+  totalBruto: number
+  descuentoTotal: number
+  totalNeto: number
   observacion?: string
   detalles: DetallePedido[]
   direccionEntrega: DireccionEntrega

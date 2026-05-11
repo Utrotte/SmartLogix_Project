@@ -40,9 +40,9 @@ export default function CrearEnvioPage() {
       setError(null)
       const pedido = await pedidosService.obtenerPedido(Number(idPedidoInput))
 
-      // Validar que sea un pedido confirmado
-      if (pedido.estadoActual !== 'CONFIRMADO') {
-        setError('El pedido debe estar en estado CONFIRMADO')
+      // Validar que sea un pedido en estado válido para enviar
+      if (!['CREADO', 'CONFIRMADO', 'PAGADO'].includes(pedido.estadoActual)) {
+        setError(`El pedido debe estar en estado CREADO, CONFIRMADO o PAGADO. Estado actual: ${pedido.estadoActual}`)
         return
       }
 
