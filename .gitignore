@@ -14,6 +14,9 @@ Thumbs.db
 
 # Java / Maven
 **/target/
+**/.mvn/
+**/mvnw
+**/mvnw.cmd
 *.log
 
 # Node / Angular / Ionic
@@ -23,10 +26,11 @@ frontend-ionic/.angular/
 frontend-ionic/coverage/
 npm-debug.log*
 
-# Android generado
-frontend-ionic/android/.gradle/
-frontend-ionic/android/local.properties
-frontend-ionic/android/**/build/
+# Plataforma nativa Android generada por Capacitor
+frontend-ionic/android/
+
+# Herramientas de modernizacion locales (no forman parte de la aplicacion)
+.github/modernize/
 
 # Configuración sensible
 **/.env

@@ -124,6 +124,7 @@ La aplicación Android contiene la misma interfaz Angular a través de Capacitor
 Requisitos:
 
 - JDK 17.
+- Maven 3.9 o superior.
 - Node.js y npm.
 - MySQL con las bases y credenciales indicadas en cada `application.properties`.
 - Variables de entorno `DB_PASSWORD` y `JWT_SECRET` configuradas antes del arranque.
@@ -132,30 +133,58 @@ Los componentes se ejecutan desde sus módulos. Primero debe iniciarse Eureka:
 
 ```powershell
 cd .\Infraestructura\servidor-eureka
-.\mvnw.cmd spring-boot:run
+mvn spring-boot:run
 ```
 
 Después se inicia cada microservicio Spring Boot desde su carpeta mediante:
 
 ```powershell
-.\mvnw.cmd spring-boot:run
+mvn spring-boot:run
 ```
 
 El servicio de avisos se inicia desde `microservicios/ms-integracion-avisos`:
 
 ```powershell
-npm install
+npm ci
 npm start
 ```
 
-Una vez registrados los servicios, se inician el BFF y el API Gateway desde sus carpetas con Maven Wrapper. Finalmente, el frontend se ejecuta desde `frontend-ionic`:
+Una vez registrados los servicios, se inician el BFF y el API Gateway desde sus carpetas con `mvn spring-boot:run`. Finalmente, el frontend se ejecuta desde `frontend-ionic`:
 
 ```powershell
-npm install
+npm ci
 npm start
 ```
 
-## 11. Decisiones arquitectónicas
+## 11. Reconstrucción de artefactos excluidos
+
+El repositorio conserva el código fuente y los descriptores de dependencias. No versiona `target`, `node_modules`, `www`, cachés, binarios ni la plataforma Android generada, porque todos ellos se reconstruyen desde el proyecto.
+
+Para compilar un módulo Java:
+
+```powershell
+mvn clean package
+```
+
+Para generar el frontend web:
+
+```powershell
+cd .\frontend-ionic
+npm ci
+npm run build
+```
+
+Para regenerar el proyecto nativo y abrirlo en Android Studio:
+
+```powershell
+cd .\frontend-ionic
+npm ci
+npx cap add android
+npm run android:sync
+npm run android:open
+```
+
+## 12. Decisiones arquitectónicas
 
 - El Gateway es la única entrada desde el frontend.
 - Eureka desacopla ubicaciones físicas y nombres de servicio.
@@ -165,6 +194,6 @@ npm start
 - Avisos es auxiliar: su indisponibilidad no invalida una operación principal ya confirmada.
 - La separación de bases evita acoplamiento por esquema y permite evolución independiente.
 
-## 12. Conclusión
+## 13. Conclusión
 
 SmartLogix implementa una arquitectura distribuida coherente con los límites del dominio logístico. El uso de Gateway, Eureka, BFF y persistencia independiente permite centralizar el acceso sin convertir la solución en un backend monolítico. La interfaz web y móvil actúa como cliente de la misma arquitectura y mantiene la lógica de negocio en los servicios correspondientes.
