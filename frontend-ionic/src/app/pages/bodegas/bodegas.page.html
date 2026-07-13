@@ -1,0 +1,110 @@
+<ion-header>
+  <ion-toolbar class="smart-toolbar">
+    <ion-title>Bodegas</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="bodegas-content">
+  <div class="bodegas-shell">
+    <section class="page-header">
+      <div>
+        <h1>Bodegas y ubicaciones</h1>
+        <p>Consulta de bodegas registradas desde el microservicio de bodegas.</p>
+      </div>
+    </section>
+
+    <section class="tools">
+      <ion-searchbar
+        placeholder="Buscar por nombre, dirección, ID o estado"
+        [(ngModel)]="terminoBusqueda"
+        (ionInput)="aplicarFiltro()">
+      </ion-searchbar>
+
+      <div class="actions">
+        <ion-button size="small" color="success" (click)="mostrarFormulario = !mostrarFormulario">+ Nueva bodega</ion-button>
+        <ion-button size="small" (click)="cargarBodegas()">
+          Actualizar
+        </ion-button>
+
+        <ion-button size="small" fill="outline" (click)="irInventario()">
+          Ver inventario
+        </ion-button>
+
+        <ion-button size="small" fill="outline" (click)="volverDashboard()">
+          Volver al dashboard
+        </ion-button>
+      </div>
+    </section>
+    <ion-card *ngIf="mostrarFormulario"><ion-card-header><ion-card-title>Registrar centro logístico</ion-card-title></ion-card-header><ion-card-content><ion-item><ion-label position="stacked">Nombre</ion-label><ion-input [(ngModel)]="nueva.nombre"></ion-input></ion-item><ion-item><ion-label position="stacked">Dirección</ion-label><ion-input [(ngModel)]="nueva.direccion"></ion-input></ion-item><ion-item><ion-label position="stacked">Capacidad</ion-label><ion-input type="number" [(ngModel)]="nueva.capacidad"></ion-input></ion-item><ion-button expand="block" (click)="crearBodega()" [disabled]="!nueva.nombre || !nueva.direccion">Guardar bodega</ion-button></ion-card-content></ion-card>
+
+    <ion-card *ngIf="loading" class="state-card">
+      <ion-card-content>
+        Cargando bodegas...
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="error" class="state-card">
+      <ion-card-content class="error-message">
+        {{ error }}
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="!loading && !error && bodegasFiltradas.length === 0" class="state-card">
+      <ion-card-content>
+        Sin bodegas para mostrar.
+      </ion-card-content>
+    </ion-card>
+
+    <section class="bodegas-grid" *ngIf="!loading && bodegasFiltradas.length > 0">
+      <ion-card class="bodega-card" *ngFor="let bodega of bodegasFiltradas">
+        <ion-card-header>
+          <div class="card-top">
+            <div>
+              <ion-card-title>
+                {{ bodega.nombre || 'Bodega sin nombre' }}
+              </ion-card-title>
+
+              <ion-card-subtitle>
+                ID {{ obtenerId(bodega) }}
+              </ion-card-subtitle>
+            </div>
+
+            <ion-badge [color]="colorEstado(bodega)">
+              {{ obtenerEstado(bodega) }}
+            </ion-badge>
+          </div>
+        </ion-card-header>
+
+        <ion-card-content>
+          <div class="warehouse-visual">
+            <div class="warehouse-icon">
+              BG
+            </div>
+
+            <div>
+              <span>Ubicación registrada</span>
+              <strong>{{ bodega.direccion || 'Dirección no informada' }}</strong>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <span>Nombre</span>
+            <strong>{{ bodega.nombre || 'No informado' }}</strong>
+          </div>
+
+          <div class="info-row">
+            <span>Dirección</span>
+            <strong>{{ bodega.direccion || 'No informada' }}</strong>
+          </div>
+
+          <div class="info-row">
+            <span>Estado operativo</span>
+            <strong>{{ obtenerEstado(bodega) }}</strong>
+          </div>
+          <div class="info-row"><span>Capacidad nominal</span><strong>{{ ($any(bodega).capacidad || 0) | number }} unidades</strong></div>
+          <div class="info-row"><span>Ocupación actual</span><strong>{{ $any(bodega).ocupacion || 0 }}%</strong></div>
+        </ion-card-content>
+      </ion-card>
+    </section>
+  </div>
+</ion-content>

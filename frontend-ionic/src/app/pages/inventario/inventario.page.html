@@ -1,0 +1,10 @@
+<section class="logistics-page">
+  <header><div><span>Warehouse control</span><h1>Inventario operativo</h1><p>Disponibilidad en tiempo real para preparación de pedidos.</p></div><ion-button (click)="loadExistencias()">Sincronizar stock</ion-button></header>
+  <div class="metrics"><article><small>Stock físico</small><strong>{{ stockTotal }}</strong><em>unidades registradas</em></article><article><small>Comprometido</small><strong>{{ reservadoTotal }}</strong><em>reservas de pedidos</em></article><article class="available"><small>Disponible</small><strong>{{ disponibleTotal }}</strong><em>listo para asignar</em></article></div>
+  <article class="table-panel"><div class="title"><div><span>Mapa de existencias</span><h2>Productos por centro logístico</h2></div><b>{{ existencias.length }} posiciones</b></div>
+    <div *ngIf="loading" class="state"><ion-spinner></ion-spinner> Consultando inventario...</div><div *ngIf="error" class="state error">{{ error }}</div>
+    <table *ngIf="!loading && !error"><thead><tr><th>Producto</th><th>Centro / bodega</th><th>Stock físico</th><th>Reservado</th><th>Disponible</th><th>Nivel</th></tr></thead><tbody>
+      <tr *ngFor="let e of existencias"><td><strong>SKU-{{ e.idProducto }}</strong><small>Producto #{{ e.idProducto }}</small></td><td>Bodega {{ e.idBodega }}</td><td>{{ e.stockActual }}</td><td>{{ e.stockReservado }}</td><td><b>{{ e.stockDisponible }}</b></td><td><span class="level" [class.low]="e.stockDisponible < 10">{{ e.stockDisponible < 10 ? 'Stock crítico' : 'Disponible' }}</span></td></tr>
+    </tbody></table>
+  </article>
+</section>

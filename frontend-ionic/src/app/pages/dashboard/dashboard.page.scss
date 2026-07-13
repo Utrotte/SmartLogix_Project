@@ -1,0 +1,341 @@
+.dashboard-page {
+  width: 100%;
+}
+
+.dashboard-kpis {
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  min-height: 138px;
+  position: relative;
+}
+
+.kpi-trend {
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+
+  strong {
+    font-size: 15px;
+    color: #16a34a;
+  }
+
+  small {
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  &.negative strong {
+    color: #dc2626;
+  }
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(480px, 1fr) minmax(480px, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.panel-card {
+  background: #ffffff;
+  border: 1px solid #e5eaf1;
+  border-radius: 13px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+  overflow: hidden;
+}
+
+.panel-header {
+  height: 66px;
+  padding: 0 22px;
+  border-bottom: 1px solid #e5eaf1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  a {
+    color: #0b7cff;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  ion-icon {
+    font-size: 24px;
+    color: #0f172a;
+  }
+
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    color: #0f172a;
+    font-weight: 800;
+  }
+}
+
+.orders-panel {
+  min-height: 350px;
+}
+
+.shipping-panel {
+  min-height: 350px;
+}
+
+.shipping-content {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  padding: 28px 34px 32px;
+  align-items: center;
+}
+
+.donut-chart {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      #2563eb 0deg 108deg,
+      #22c7d6 108deg 234deg,
+      #74c984 234deg 360deg
+    );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.donut-chart::after {
+  content: "";
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.donut-center {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+
+  strong {
+    display: block;
+    font-size: 30px;
+    color: #0f172a;
+    line-height: 1;
+  }
+
+  span {
+    display: block;
+    margin-top: 8px;
+    color: #64748b;
+    font-size: 13px;
+  }
+}
+
+.shipping-stats {
+  border-left: 1px solid #e5eaf1;
+  padding-left: 28px;
+}
+
+.shipping-row {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 14px 1fr 48px 64px;
+  gap: 16px;
+  align-items: center;
+  border-bottom: 1px solid #e5eaf1;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  strong {
+    font-size: 15px;
+    color: #0f172a;
+  }
+
+  small {
+    color: #64748b;
+    font-size: 13px;
+  }
+
+  b {
+    color: #0f172a;
+    font-size: 24px;
+    font-weight: 800;
+    text-align: right;
+  }
+
+  em {
+    color: #64748b;
+    font-style: normal;
+    font-size: 13px;
+    text-align: right;
+  }
+}
+
+.dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+}
+
+.dot.blue {
+  background: #2563eb;
+}
+
+.dot.cyan {
+  background: #22c7d6;
+}
+
+.dot.green {
+  background: #74c984;
+}
+
+.alerts-panel {
+  margin-bottom: 20px;
+}
+
+.alert-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.alert-row {
+  min-height: 74px;
+  display: grid;
+  grid-template-columns: 52px 1fr 140px 130px 36px;
+  gap: 18px;
+  align-items: center;
+  padding: 0 26px;
+  border-bottom: 1px solid #eef2f7;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.alert-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 23px;
+  }
+}
+
+.alert-yellow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.alert-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.alert-purple {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.alert-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  strong {
+    color: #0f172a;
+    font-size: 15px;
+  }
+
+  span {
+    color: #475569;
+    font-size: 14px;
+  }
+}
+
+.alert-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 13px;
+
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+.arrow-button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-content {
+    grid-template-columns: 240px 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-content {
+    grid-template-columns: 1fr;
+  }
+
+  .shipping-stats {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  .alert-row {
+    grid-template-columns: 46px 1fr;
+    padding: 18px 20px;
+  }
+
+  .alert-date,
+  .arrow-button,
+  .alert-row > .badge {
+    display: none;
+  }
+}

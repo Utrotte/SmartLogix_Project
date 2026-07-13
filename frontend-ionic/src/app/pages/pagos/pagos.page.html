@@ -1,0 +1,20 @@
+<section class="finance-page">
+  <header><div><span>Financial control</span><h1>Pagos y validaciones</h1><p>Conciliación financiera y respaldo de las órdenes logísticas.</p></div><ion-button (click)="load()">Sincronizar pagos</ion-button></header>
+  <div class="metrics"><article><small>Volumen procesado</small><strong>{{ montoTotal | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></article><article><small>Transacciones</small><strong>{{ items.length }}</strong></article><article><small>Pendientes de revisión</small><strong>{{ pendientes }}</strong></article></div>
+
+  <article class="panel validation-panel" *ngIf="pagoSeleccionado">
+    <div class="panel-title"><div><span>{{ pagoSeleccionado.estadoPago === 'PENDIENTE' ? 'Validación financiera' : 'Edición de respaldo' }}</span><h2>Pago del pedido #SLX-{{ pagoSeleccionado.idPedido }}</h2><small>Completa la información utilizada para conciliar esta transacción.</small></div><button type="button" (click)="pagoSeleccionado = null">×</button></div>
+    <div class="validation-grid">
+      <label>Resultado<select [(ngModel)]="resultadoValidacion"><option value="APROBADO">Aprobado</option><option value="RECHAZADO">Rechazado</option><option value="OBSERVADO">Observado</option></select></label>
+      <label>Detalle de validación<input [(ngModel)]="referenciaValidacion" placeholder="Ej. Comprobante bancario verificado"></label>
+      <div><small>Monto conciliado</small><strong>{{ pagoSeleccionado.monto | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong><small>El monto no puede editarse desde conciliación</small></div>
+      <button type="button" (click)="guardarPago()" [disabled]="!referenciaValidacion.trim() || !resultadoValidacion || guardando">{{ guardando ? 'Guardando...' : 'Registrar validación' }}</button>
+    </div>
+  </article>
+
+  <article class="panel"><div class="panel-title"><div><span>Conciliación</span><h2>Movimientos recientes</h2></div></div><div *ngIf="loading" class="state"><ion-spinner></ion-spinner></div><div *ngIf="error" class="state error">{{ error }}</div>
+    <table *ngIf="!loading"><thead><tr><th>Transacción</th><th>Pedido</th><th>Método</th><th>Fecha</th><th>Monto</th><th>Estado</th><th>Acción</th></tr></thead><tbody>
+      <tr *ngFor="let p of items"><td><strong>{{ referencia(p) }}</strong></td><td>#SLX-{{ p.idPedido }}</td><td><span class="payment-method" [class.undefined]="nombreMetodo(p) === 'Por definir'">{{ nombreMetodo(p) }}</span></td><td>{{ fecha(p) | date:'dd/MM/yyyy HH:mm' }}</td><td><b>{{ p.monto | currency:'CLP':'symbol-narrow':'1.0-0' }}</b></td><td><span class="status" [class.pending]="nombreEstado(p) === 'PENDIENTE'">{{ nombreEstado(p) }}</span></td><td><button (click)="abrirValidacion(p)">Registrar validación</button></td></tr>
+    </tbody></table>
+  </article>
+</section>

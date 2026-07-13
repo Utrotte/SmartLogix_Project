@@ -1,0 +1,105 @@
+<ion-header>
+  <ion-toolbar class="smart-toolbar">
+    <ion-title>Productos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="productos-content">
+  <div class="productos-shell">
+    <section class="page-header">
+      <div>
+        <h1>Catálogo de productos</h1>
+        <p>Productos disponibles consumidos desde el microservicio de catálogo.</p>
+      </div>
+    </section>
+
+    <section class="tools">
+      <ion-searchbar
+        placeholder="Buscar por nombre, SKU, marca o categoría"
+        [(ngModel)]="terminoBusqueda"
+        (ionInput)="aplicarFiltro()">
+      </ion-searchbar>
+
+      <div class="actions">
+        <ion-button size="small" color="success" (click)="mostrarFormulario = !mostrarFormulario">+ Nuevo producto</ion-button>
+        <ion-button size="small" (click)="cargarProductos()">
+          Actualizar
+        </ion-button>
+
+        <ion-button size="small" fill="outline" (click)="volverDashboard()">
+          Volver al dashboard
+        </ion-button>
+      </div>
+    </section>
+    <ion-card *ngIf="mostrarFormulario"><ion-card-header><ion-card-title>Agregar producto al catálogo</ion-card-title></ion-card-header><ion-card-content>
+      <ion-item><ion-label position="stacked">SKU</ion-label><ion-input [(ngModel)]="nuevo.codigoSku"></ion-input></ion-item><ion-item><ion-label position="stacked">Nombre</ion-label><ion-input [(ngModel)]="nuevo.nombre"></ion-input></ion-item><ion-item><ion-label position="stacked">Marca</ion-label><ion-input [(ngModel)]="nuevo.nombreMarca"></ion-input></ion-item><ion-item><ion-label position="stacked">Categoría</ion-label><ion-input [(ngModel)]="nuevo.nombreCategoria"></ion-input></ion-item><ion-item><ion-label position="stacked">Precio CLP</ion-label><ion-input type="number" [(ngModel)]="nuevo.precioActual"></ion-input></ion-item><ion-button expand="block" (click)="crearProducto()" [disabled]="!nuevo.codigoSku || !nuevo.nombre">Guardar producto</ion-button>
+    </ion-card-content></ion-card>
+
+    <ion-card *ngIf="loading" class="state-card">
+      <ion-card-content>
+        Cargando productos...
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="error" class="state-card">
+      <ion-card-content class="error-message">
+        {{ error }}
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card *ngIf="!loading && !error && productosFiltrados.length === 0" class="state-card">
+      <ion-card-content>
+        Sin productos para mostrar.
+      </ion-card-content>
+    </ion-card>
+
+    <section class="products-grid" *ngIf="!loading && productosFiltrados.length > 0">
+      <ion-card class="product-card" *ngFor="let producto of productosFiltrados">
+        <div class="image-box">
+          <img
+            [src]="obtenerImagen(producto)"
+            [alt]="producto.nombre || 'Producto SmartLogix'"
+            (error)="$any($event.target).src = '/assets/products/default-product.png'"
+          />
+
+          <ion-badge [color]="colorEstado(producto)" class="status-badge">
+            {{ obtenerEstado(producto) }}
+          </ion-badge>
+        </div>
+
+        <ion-card-header>
+          <ion-card-title>
+            {{ producto.nombre || 'Producto sin nombre' }}
+          </ion-card-title>
+
+          <ion-card-subtitle>
+            {{ obtenerSku(producto) }} · ID {{ obtenerId(producto) }}
+          </ion-card-subtitle>
+        </ion-card-header>
+
+        <ion-card-content>
+          <p class="description">
+            {{ producto.descripcion || 'Sin descripción registrada.' }}
+          </p>
+
+          <div class="meta-grid">
+            <div>
+              <span>Marca</span>
+              <strong>{{ obtenerMarca(producto) }}</strong>
+            </div>
+
+            <div>
+              <span>Categoría</span>
+              <strong>{{ obtenerCategoria(producto) }}</strong>
+            </div>
+          </div>
+
+          <div class="price-row">
+            <span>Precio actual</span>
+            <strong>{{ formatearPrecio(producto) }}</strong>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </section>
+  </div>
+</ion-content>

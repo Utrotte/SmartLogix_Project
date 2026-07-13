@@ -1,0 +1,158 @@
+<section class="dashboard-page">
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Panel principal</h1>
+      <p class="page-subtitle">Resumen operativo de la plataforma</p>
+    </div>
+  </div>
+
+  <section class="kpi-grid dashboard-kpis">
+    <article class="kpi-card" *ngFor="let kpi of kpis">
+      <div class="kpi-icon" [class]="'kpi-icon kpi-' + kpi.color">
+        <ion-icon [name]="kpi.icon"></ion-icon>
+      </div>
+
+      <div class="kpi-content">
+        <span>{{ kpi.title }}</span>
+        <strong>{{ kpi.value }}</strong>
+      </div>
+
+      <div class="kpi-trend" [class.negative]="kpi.trendType === 'negative'">
+        <strong>{{ kpi.trend }}</strong>
+        <small>vs. ayer</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="panel-card orders-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <ion-icon name="clipboard-outline"></ion-icon>
+          <h2>Últimos pedidos</h2>
+        </div>
+
+        <a routerLink="/pedidos">Ver todos</a>
+      </div>
+
+      <table class="smart-table">
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Fecha</th>
+            <th>Total</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let pedido of pedidosRecientes">
+            <td>
+              <a class="link">{{ pedido.id }}</a>
+              <small class="order-item">{{ pedido.item }}</small>
+            </td>
+            <td><strong>{{ pedido.cliente }}</strong><small class="order-item">{{ pedido.sku || 'Cliente registrado' }}</small></td>
+            <td>{{ pedido.fecha }}</td>
+            <td>{{ pedido.total }}</td>
+            <td>
+              <span class="badge" [class]="'badge badge-' + pedido.badge">
+                {{ pedido.estado }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </article>
+
+    <article class="panel-card shipping-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <ion-icon name="bus-outline"></ion-icon>
+          <h2>Estado de envíos</h2>
+        </div>
+
+        <a routerLink="/envios">Ver detalle</a>
+      </div>
+
+      <div class="shipping-content">
+        <div class="donut-chart">
+          <div class="donut-center">
+            <strong>{{ totalEnvios }}</strong>
+            <span>Total envíos</span>
+          </div>
+        </div>
+
+        <div class="shipping-stats">
+          <div class="shipping-row">
+            <span class="dot blue"></span>
+            <div>
+              <strong>Programados</strong>
+              <small>Para próximas 24h</small>
+            </div>
+            <b>{{ enviosProgramados }}</b>
+            <em>Programados</em>
+          </div>
+
+          <div class="shipping-row">
+            <span class="dot cyan"></span>
+            <div>
+              <strong>En tránsito</strong>
+              <small>En camino a destino</small>
+            </div>
+            <b>{{ enviosTransito }}</b>
+            <em>En ruta</em>
+          </div>
+
+          <div class="shipping-row">
+            <span class="dot green"></span>
+            <div>
+              <strong>Entregados</strong>
+              <small>Últimos 7 días</small>
+            </div>
+            <b>{{ enviosEntregados }}</b>
+            <em>Finalizados</em>
+          </div>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel-card alerts-panel">
+    <div class="panel-header">
+      <div class="panel-title">
+        <ion-icon name="notifications-outline"></ion-icon>
+        <h2>Alertas operativas</h2>
+      </div>
+
+      <a routerLink="/avisos">Ver todas</a>
+    </div>
+
+    <div class="alert-list">
+      <article class="alert-row" *ngFor="let alerta of alertas">
+        <div class="alert-icon" [class]="'alert-icon alert-' + alerta.badge">
+          <ion-icon [name]="alerta.icon"></ion-icon>
+        </div>
+
+        <div class="alert-main">
+          <strong>{{ alerta.titulo }}</strong>
+          <span>{{ alerta.descripcion }}</span>
+          <small *ngIf="alerta.contexto">{{ alerta.contexto }}</small>
+        </div>
+
+        <div class="alert-date">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span>{{ alerta.fecha }}</span>
+        </div>
+
+        <span class="badge" [class]="'badge badge-' + alerta.badge">
+          {{ alerta.tipo }}
+        </span>
+
+        <button class="arrow-button" type="button">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </button>
+      </article>
+    </div>
+  </section>
+</section>

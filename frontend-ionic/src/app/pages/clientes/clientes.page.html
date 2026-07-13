@@ -1,0 +1,97 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Clientes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="page-content">
+  <section class="page-header">
+    <h1>Clientes registrados</h1>
+    <p>Listado de clientes consumido desde el microservicio de clientes.</p>
+  </section>
+
+  <section class="actions">
+    <ion-button size="small" color="success" (click)="mostrarFormulario = !mostrarFormulario">+ Nuevo cliente</ion-button>
+    <ion-button size="small" (click)="cargarClientes()">
+      Actualizar
+    </ion-button>
+
+    <ion-button size="small" fill="outline" (click)="volverDashboard()">
+      Volver al dashboard
+    </ion-button>
+  </section>
+
+  <ion-card *ngIf="mostrarFormulario"><ion-card-header><ion-card-title>Registrar cliente</ion-card-title></ion-card-header><ion-card-content>
+    <ion-item><ion-label position="stacked">Nombre comercial</ion-label><ion-input [(ngModel)]="nuevo.nombre"></ion-input></ion-item>
+    <ion-item><ion-label position="stacked">Razón social</ion-label><ion-input [(ngModel)]="nuevo.apellidoRazonSocial"></ion-input></ion-item>
+    <ion-item><ion-label position="stacked">RUT</ion-label><ion-input [(ngModel)]="nuevo.documento"></ion-input></ion-item>
+    <ion-item><ion-label position="stacked">Correo</ion-label><ion-input type="email" [(ngModel)]="nuevo.correo"></ion-input></ion-item>
+    <ion-item><ion-label position="stacked">Teléfono</ion-label><ion-input [(ngModel)]="nuevo.telefono"></ion-input></ion-item>
+    <ion-button expand="block" (click)="crearCliente()" [disabled]="!nuevo.nombre || !nuevo.documento">Guardar cliente</ion-button>
+  </ion-card-content></ion-card>
+
+  <ion-card *ngIf="loading">
+    <ion-card-content>
+      Cargando clientes...
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="error">
+    <ion-card-content class="error-message">
+      {{ error }}
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="!loading && !error && clientes.length === 0">
+    <ion-card-content>
+      Sin registros.
+    </ion-card-content>
+  </ion-card>
+
+  <section class="cards-grid" *ngIf="!loading && clientes.length > 0">
+    <ion-card class="data-card" *ngFor="let cliente of clientes">
+      <ion-card-header>
+        <ion-card-title>
+          {{ cliente.nombre || 'Cliente sin nombre' }}
+        </ion-card-title>
+
+        <ion-card-subtitle>
+          ID: {{ obtenerId(cliente) }}
+        </ion-card-subtitle>
+      </ion-card-header>
+
+      <ion-card-content>
+        <div class="row">
+          <span>Tipo</span>
+          <strong>{{ cliente.nombreTipoCliente || 'No informado' }}</strong>
+        </div>
+
+        <div class="row">
+          <span>Razón social / Apellido</span>
+          <strong>{{ cliente.apellidoRazonSocial || 'No informado' }}</strong>
+        </div>
+
+        <div class="row">
+          <span>Documento</span>
+          <strong>{{ cliente.documento || 'No informado' }}</strong>
+        </div>
+
+        <div class="row">
+          <span>Correo</span>
+          <strong>{{ cliente.correo || 'No informado' }}</strong>
+        </div>
+
+        <div class="row">
+          <span>Teléfono</span>
+          <strong>{{ cliente.telefono || 'No informado' }}</strong>
+        </div>
+
+        <div class="status-row">
+          <ion-badge [color]="cliente.estado === 'ACTIVO' ? 'success' : 'medium'">
+            {{ cliente.estado || 'SIN ESTADO' }}
+          </ion-badge>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </section>
+</ion-content>

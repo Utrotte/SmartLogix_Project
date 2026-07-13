@@ -1,0 +1,34 @@
+# Herramientas y archivos temporales locales
+.agents/
+.runtime/
+scripts/
+_backup/
+.codex/
+
+# IDE y sistema operativo
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Java / Maven
+**/target/
+*.log
+
+# Node / Angular / Ionic
+**/node_modules/
+frontend-ionic/www/
+frontend-ionic/.angular/
+frontend-ionic/coverage/
+npm-debug.log*
+
+# Android generado
+frontend-ionic/android/.gradle/
+frontend-ionic/android/local.properties
+frontend-ionic/android/**/build/
+
+# Configuración sensible
+**/.env
+**/.env.*
+!**/.env.example

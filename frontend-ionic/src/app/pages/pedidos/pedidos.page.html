@@ -1,0 +1,76 @@
+<section class="operations-page">
+  <header class="page-heading">
+    <div><span class="eyebrow">Centro de operaciones</span><h1>Gestión de pedidos</h1><p>Selecciona al cliente y los productos por su nombre; SmartLogix gestiona los identificadores internos.</p></div>
+    <button class="refresh" type="button" (click)="cargarOperacion()">↻ Sincronizar</button>
+  </header>
+
+  <div class="flow-strip">
+    <div class="flow-step done"><b>1</b><span><strong>Inventario</strong><small>Validación de stock</small></span></div>
+    <i></i><div class="flow-step active"><b>2</b><span><strong>Pedido</strong><small>Reserva automática</small></span></div>
+    <i></i><div class="flow-step"><b>3</b><span><strong>Despacho</strong><small>Programación de envío</small></span></div>
+  </div>
+
+  <div class="workspace-grid">
+    <article class="panel order-form">
+      <div class="panel-title"><div><span>Nueva orden</span><h2>Datos comerciales</h2></div><span class="secure">● Integración activa</span></div>
+      <div class="form-grid">
+        <label>Cliente
+          <select [(ngModel)]="idCliente">
+            <option *ngFor="let cliente of clientes" [ngValue]="cliente.idCliente ?? cliente.id">{{ cliente.nombre || cliente.apellidoRazonSocial }} · {{ cliente.documento }}</option>
+          </select>
+        </label>
+        <label>Producto y ubicación
+          <select [(ngModel)]="posicionSeleccionada" (ngModelChange)="actualizarPosicion()">
+            <option *ngFor="let e of existencias" [ngValue]="e.idProducto + '|' + e.idBodega">{{ nombreProducto(e.idProducto) }} · {{ skuProducto(e.idProducto) }} · {{ nombreBodega(e.idBodega) }}</option>
+          </select>
+        </label>
+        <label>Cantidad <input type="number" min="1" [(ngModel)]="cantidad"></label>
+        <label>Precio unitario <input type="number" min="1" [(ngModel)]="precioUnitario"></label>
+      </div>
+      <div class="stock-check" [class.invalid]="!stockSuficiente">
+        <span>Disponibilidad en {{ nombreBodega(idBodega) }}</span><strong>{{ stockDisponible }} unidades</strong><small>{{ stockSuficiente ? 'Stock confirmado para reservar' : 'Ajusta la cantidad solicitada' }}</small>
+      </div>
+      <div class="order-total"><span>Total estimado</span><strong>{{ totalPedido | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong></div>
+      <button class="primary-action" type="button" (click)="crearPedido()" [disabled]="creating || !stockSuficiente || !idCliente">
+        {{ creating ? 'Procesando reserva...' : 'Confirmar pedido y reservar stock' }}
+      </button>
+    </article>
+
+    <aside class="panel inventory-summary">
+      <div class="panel-title"><div><span>Inventario conectado</span><h2>Disponibilidad por producto</h2></div></div>
+      <div class="inventory-row" *ngFor="let e of existencias | slice:0:5">
+        <div class="product-icon">▣</div><div><strong>{{ nombreProducto(e.idProducto) }}</strong><small>{{ nombreBodega(e.idBodega) }} · {{ skuProducto(e.idProducto) }}</small></div>
+        <span><b>{{ e.stockDisponible }}</b><small>disponibles</small></span>
+      </div>
+      <button class="secondary-action" type="button" (click)="goInventario()">Abrir inventario completo</button>
+    </aside>
+  </div>
+
+  <article class="panel dispatch-planner" *ngIf="pedidoParaEnvio">
+    <div class="panel-title"><div><span>Planificación de despacho</span><h2>Asignar envío para {{ nombreCliente(pedidoParaEnvio.idCliente) }}</h2></div><button class="close-planner" type="button" (click)="pedidoParaEnvio = null">×</button></div>
+    <div class="planner-grid">
+      <label>Transportista<select [(ngModel)]="planEnvio.idTransportista" (ngModelChange)="planEnvio.idRuta = 0"><option *ngFor="let t of transportistas" [ngValue]="t.idTransportista">{{ t.nombre }} · {{ t.tipoVehiculo }} · {{ t.puntualidad }}% puntualidad</option></select></label>
+      <label>Ruta de distribución<select [(ngModel)]="planEnvio.idRuta"><option *ngFor="let ruta of rutasDisponibles()" [ngValue]="ruta.idRuta">{{ ruta.nombre }} · {{ ruta.distanciaKm }} km · {{ ruta.tiempoEstimado }}</option></select></label>
+      <label>Entrega estimada <input type="datetime-local" [(ngModel)]="planEnvio.fechaEstimadaEntrega"></label>
+      <label>Instrucciones <input type="text" [(ngModel)]="planEnvio.observacion"></label>
+    </div>
+    <div class="planner-summary"><span>Orden #SLX-{{ pedidoParaEnvio.id }}</span><strong>{{ pedidoParaEnvio.total | currency:'CLP':'symbol-narrow':'1.0-0' }}</strong><button class="primary-action" type="button" (click)="confirmarEnvio()" [disabled]="!planEnvio.idRuta">Confirmar programación</button></div>
+  </article>
+
+  <article class="panel orders-table">
+    <div class="panel-title"><div><span>Trazabilidad</span><h2>Pedidos recientes</h2></div><span class="counter">{{ pedidos.length }} órdenes</span></div>
+    <div *ngIf="loading" class="state">Sincronizando operación...</div><div *ngIf="error" class="state error">{{ error }}</div>
+    <table *ngIf="!loading"><thead><tr><th>Orden</th><th>Cliente</th><th>Fecha</th><th>Estado</th><th>Total</th><th>Próxima acción</th></tr></thead>
+      <tbody><tr *ngFor="let p of pedidos">
+        <td><strong>#SLX-{{ p.id }}</strong></td><td><strong>{{ nombreCliente(p.idCliente) }}</strong></td><td>{{ p.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</td>
+        <td><span class="status" [ngClass]="claseEstado(p.estadoPedido)">{{ p.estadoPedido.replaceAll('_', ' ') }}</span></td><td>{{ p.total | currency:'CLP':'symbol-narrow':'1.0-0' }}</td>
+        <td>
+          <button *ngIf="p.estadoPedido === 'CREADO' || p.estadoPedido === 'PENDIENTE_PAGO' || p.estadoPedido === 'PAGO_RECHAZADO'" class="ship-action" type="button" (click)="irPagos()">Validar pago →</button>
+          <button *ngIf="p.estadoPedido === 'PAGO_APROBADO' || p.estadoPedido === 'CONFIRMADO'" class="ship-action" type="button" (click)="iniciarPreparacion(p)">Iniciar preparación →</button>
+          <button *ngIf="p.estadoPedido === 'EN_PREPARACION'" class="ship-action" type="button" (click)="abrirPlanificacion(p)">Planificar despacho →</button>
+          <span *ngIf="p.estadoPedido === 'ENVIO_PROGRAMADO' || p.estadoPedido === 'DESPACHADO'" class="completed-action">Envío coordinado ✓</span>
+        </td>
+      </tr></tbody>
+    </table>
+  </article>
+</section>

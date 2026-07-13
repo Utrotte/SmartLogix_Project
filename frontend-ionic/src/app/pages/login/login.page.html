@@ -1,0 +1,71 @@
+<div class="login-screen">
+  <header class="login-topbar">
+    <div class="login-brand">
+      <div class="brand-mark">S</div>
+      <div class="brand-name">
+        <span>Smart</span><strong>Logix</strong>
+      </div>
+    </div>
+  </header>
+
+  <main class="login-content">
+    <div class="background-shape shape-left"></div>
+    <div class="background-shape shape-right"></div>
+
+    <section class="login-card">
+      <div class="card-logo">
+        <div class="card-logo-mark">S</div>
+        <div class="card-logo-text">
+          <span>Smart</span><strong>Logix</strong>
+        </div>
+      </div>
+
+      <h1>Iniciar sesión</h1>
+      <p class="subtitle">Plataforma de gestión logística</p>
+
+      <form class="login-form" (ngSubmit)="iniciarSesion()">
+        <label>Correo electrónico</label>
+        <div class="input-group">
+          <span class="input-icon">✉</span>
+          <input
+            type="email"
+            name="correo"
+            [(ngModel)]="correo"
+            placeholder="Ingresa tu correo electrónico"
+          />
+        </div>
+
+        <label>Contraseña</label>
+        <div class="input-group">
+          <span class="input-icon">🔒</span>
+          <input
+            [type]="mostrarPassword ? 'text' : 'password'"
+            name="password"
+            [(ngModel)]="password"
+            placeholder="Ingresa tu contraseña"
+          />
+          <button
+            type="button"
+            class="eye-button"
+            (click)="mostrarPassword = !mostrarPassword"
+          >
+            👁
+          </button>
+        </div>
+
+        <button class="login-button" type="submit" [disabled]="loading || !correo || !password">
+          {{ loading ? 'Ingresando...' : 'Ingresar' }}
+        </button>
+
+        <button class="forgot-button" type="button">
+          ¿Olvidaste tu contraseña?
+        </button>
+      </form>
+
+      <div class="secure-message">
+        <span>🔒</span>
+        <p>Acceso seguro y protegido. Tus datos están en buenas manos.</p>
+      </div>
+    </section>
+  </main>
+</div>

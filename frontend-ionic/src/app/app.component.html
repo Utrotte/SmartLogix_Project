@@ -1,0 +1,61 @@
+<ion-app>
+  <div class="smart-shell" [class.sidebar-collapsed]="sidebarCollapsed" [class.login-layout]="isLoginPage">
+    <aside class="sidebar" *ngIf="!isLoginPage">
+      <div class="brand">
+        <div class="brand-icon">S</div>
+        <div class="brand-text"><span>Smart</span><strong>Logix</strong></div>
+      </div>
+
+      <nav class="menu">
+        <a *ngFor="let item of menuItems" [routerLink]="item.route" (click)="closeMobileSidebar()"
+          routerLinkActive="active" class="menu-item"
+          [title]="sidebarCollapsed ? item.label : ''">
+          <ion-icon [name]="item.icon"></ion-icon>
+          <span>{{ item.label }}</span>
+        </a>
+      </nav>
+
+      <button class="collapse-option" type="button" (click)="toggleSidebar()">
+        <ion-icon [name]="sidebarCollapsed ? 'chevron-forward-outline' : 'chevron-back-outline'"></ion-icon>
+        <span>{{ sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú' }}</span>
+      </button>
+    </aside>
+    <button class="sidebar-backdrop" *ngIf="!isLoginPage && !sidebarCollapsed" type="button"
+      aria-label="Cerrar menú" (click)="closeMobileSidebar()"></button>
+
+    <section class="main-section">
+      <header class="topbar" *ngIf="!isLoginPage">
+        <button class="menu-button" type="button" (click)="toggleSidebar()">
+          <ion-icon name="menu-outline"></ion-icon>
+        </button>
+
+        <div class="search-box">
+          <ion-icon name="search-outline"></ion-icon>
+          <input type="text" placeholder="Buscar en SmartLogix..." />
+        </div>
+
+        <div class="topbar-actions">
+          <a class="icon-button notification" routerLink="/avisos" title="Avisos">
+            <ion-icon name="notifications-outline"></ion-icon>
+            <span *ngIf="avisosPendientes">{{ avisosPendientes > 9 ? '9+' : avisosPendientes }}</span>
+          </a>
+          <div class="divider"></div>
+          <div class="user-box">
+            <div class="avatar">{{ inicialesUsuario }}</div>
+            <div class="user-info">
+              <strong>{{ nombreUsuario }}</strong>
+              <small>{{ rolUsuario }}</small>
+            </div>
+            <button class="icon-button" type="button" title="Cerrar sesión" (click)="cerrarSesion()">
+              <ion-icon name="log-out-outline"></ion-icon>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="content-area" [class.login-content-area]="isLoginPage">
+        <ion-router-outlet></ion-router-outlet>
+      </main>
+    </section>
+  </div>
+</ion-app>

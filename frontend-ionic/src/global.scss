@@ -1,0 +1,415 @@
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: #f4f7fb;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+ion-app {
+  background: #f4f7fb;
+}
+
+ion-content {
+  --background: #f4f7fb;
+}
+
+a {
+  color: inherit;
+}
+
+.page-title {
+  font-size: 38px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.7px;
+}
+
+.page-subtitle {
+  font-size: 17px;
+  color: #64748b;
+  margin: 6px 0 0;
+}
+
+.smart-card {
+  background: #ffffff;
+  border: 1px solid #e5eaf1;
+  border-radius: 13px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+}
+
+.smart-button {
+  height: 52px;
+  border: 0;
+  border-radius: 9px;
+  background: #0b7cff;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.22);
+}
+
+.smart-input,
+.smart-select {
+  height: 52px;
+  border: 1px solid #dce3ec;
+  border-radius: 9px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 16px;
+  color: #334155;
+
+  ion-icon {
+    font-size: 21px;
+    color: #64748b;
+  }
+
+  input {
+    border: 0;
+    outline: 0;
+    background: transparent;
+    flex: 1;
+    font-size: 15px;
+    color: #0f172a;
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+}
+
+.badge {
+  min-width: 82px;
+  height: 28px;
+  border-radius: 8px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge-green {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.badge-yellow {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.badge-red {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-gray {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.badge-purple {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.table-card {
+  background: #ffffff;
+  border: 1px solid #e5eaf1;
+  border-radius: 13px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+  overflow: hidden;
+}
+
+.smart-table {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    padding: 18px 22px;
+    border-bottom: 1px solid #e5eaf1;
+  }
+
+  td {
+    font-size: 14px;
+    color: #1e293b;
+    padding: 16px 22px;
+    border-bottom: 1px solid #eef2f7;
+    vertical-align: middle;
+  }
+
+  tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .link {
+    color: #0b7cff;
+    font-weight: 700;
+    text-decoration: none;
+  }
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 22px 0;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 20px;
+}
+
+.kpi-card {
+  background: #ffffff;
+  border: 1px solid #e5eaf1;
+  border-radius: 13px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07);
+  padding: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.kpi-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 32px;
+  }
+}
+
+.kpi-blue {
+  background: #dbeafe;
+  color: #0b7cff;
+}
+
+.kpi-green {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.kpi-yellow {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.kpi-red {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.kpi-content span {
+  display: block;
+  font-size: 15px;
+  color: #475569;
+  margin-bottom: 10px;
+}
+
+.kpi-content strong {
+  display: block;
+  font-size: 34px;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.kpi-content small {
+  display: block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+app-pedidos .dispatch-planner { margin: 22px 0; border-top: 4px solid #1683e8; }
+app-pedidos .close-planner { border: 0; background: #f2f4f7; border-radius: 50%; width: 32px; height: 32px; font-size: 20px; }
+app-pedidos .planner-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+app-pedidos .planner-grid label { font-size: 13px; font-weight: 700; color: #475467; }
+app-pedidos .planner-grid input, app-pedidos .planner-grid select { display: block; width: 100%; box-sizing: border-box; margin-top: 7px; padding: 12px; border: 1px solid #d7deea; border-radius: 8px; background: #f9fbfd; }
+app-pedidos .planner-summary { display: flex; align-items: center; gap: 20px; border-top: 1px solid #e7ebf0; margin-top: 20px; padding-top: 18px; }
+app-pedidos .planner-summary strong { font-size: 20px; }
+app-pedidos .planner-summary .primary-action { width: auto; margin-left: auto; }
+app-pedidos .status.pending { background: #fff5dd; color: #9a5b00; }
+app-pedidos .status.progress { background: #e8f3ff; color: #116bb8; }
+app-pedidos .status.complete { background: #e7f8f0; color: #087a55; }
+app-pedidos .completed-action { color: #087a55; font-size: 12px; font-weight: 800; }
+@media (max-width: 900px) { app-pedidos .planner-grid { grid-template-columns: 1fr; } app-pedidos .planner-summary { align-items: flex-start; flex-direction: column; } app-pedidos .planner-summary .primary-action { width: 100%; margin-left: 0; } }
+app-pagos .validation-panel { margin-bottom: 22px; border-top: 4px solid #f59e0b; }
+app-pagos .validation-panel .panel-title { display: flex; justify-content: space-between; align-items: center; }
+app-pagos .validation-panel .panel-title button { border: 0; width: 32px; height: 32px; border-radius: 50%; font-size: 20px; }
+app-pagos .validation-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; align-items: end; }
+app-pagos .validation-grid label, app-pagos .validation-grid div { display: flex; flex-direction: column; font-size: 13px; font-weight: 700; color: #475467; }
+app-pagos .validation-grid input, app-pagos .validation-grid select { margin-top: 7px; padding: 11px; border: 1px solid #d7deea; border-radius: 8px; background: #f9fbfd; }
+app-pagos .validation-grid button { border: 0; border-radius: 8px; padding: 12px 16px; background: #0c7bdd; color: white; font-weight: 800; }
+app-pagos .validation-grid button:disabled { opacity: .45; }
+@media (max-width: 900px) { app-pagos .validation-grid { grid-template-columns: 1fr; } }
+app-envios .shipment-action { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+app-envios .shipment-action button { border: 0; background: #0c7bdd; color: white; border-radius: 7px; padding: 8px 10px; font-size: 11px; font-weight: 800; }
+app-envios .status.delivered { background: #e7f8f0; color: #087a55; }
+app-transportistas .carrier-form, app-rutas .route-form { background: white; border: 1px solid #e0e7ef; border-top: 4px solid #13a878; border-radius: 14px; padding: 22px; margin-bottom: 22px; }
+app-transportistas .carrier-form>div, app-rutas .route-form>div { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+app-transportistas .carrier-form label, app-rutas .route-form label { font-size: 12px; font-weight: 700; color: #475467; }
+app-transportistas .carrier-form input, app-transportistas .carrier-form select, app-rutas .route-form input, app-rutas .route-form select { display: block; width: 100%; box-sizing: border-box; margin-top: 6px; padding: 10px; border: 1px solid #d7deea; border-radius: 8px; }
+app-transportistas .carrier-form>button, app-rutas .route-form>button { margin-top: 16px; border: 0; border-radius: 8px; background: #0c7bdd; color: white; padding: 11px 18px; font-weight: 800; }
+@media (max-width: 900px) { app-transportistas .carrier-form>div, app-rutas .route-form>div { grid-template-columns: 1fr 1fr; } }
+app-dashboard .order-item { display: block; margin-top: 4px; max-width: 150px; color: #718096; font-size: 10px; line-height: 1.25; }
+app-dashboard .alert-main small { display: block; margin-top: 5px; color: #475467; font-size: 10px; font-weight: 700; }
+app-pagos .payment-method { display: inline-flex; padding: 5px 8px; border-radius: 6px; background: #eef6ff; color: #175f9e; font-size: 11px; font-weight: 700; }
+app-pagos .payment-method.undefined { background: #fff5dd; color: #9a5b00; }
+app-pagos table td:first-child small { display: block; margin-top: 4px; color: #718096; font-size: 9px; }
+app-envios .recent-orders { background: white; border: 1px solid #e0e7ef; border-radius: 14px; padding: 22px; margin-bottom: 22px; box-shadow: 0 8px 24px #1018280a; }
+app-envios .recent-order-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+app-envios .recent-order-grid>div { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; padding: 13px; border: 1px solid #e8edf3; border-radius: 10px; }
+app-envios .recent-order-grid>div>div { display: flex; flex-direction: column; }
+app-envios .recent-order-grid strong { font-size: 13px; }
+app-envios .recent-order-grid span, app-envios .recent-order-grid time { color: #718096; font-size: 10px; }
+app-envios .recent-order-grid b { grid-column: 1/-1; width: fit-content; padding: 5px 8px; border-radius: 20px; background: #fff5dd; color: #9a5b00; font-size: 9px; }
+app-envios .recent-order-grid b.ready { background: #e8f3ff; color: #116bb8; }
+app-envios .recent-order-grid b.shipped { background: #e7f8f0; color: #087a55; }
+@media(max-width:800px){app-envios .recent-order-grid{grid-template-columns:1fr}}
+app-envios .order-shipment .shipment-main span { max-width: 280px; }
+app-envios .order-shipment>div:nth-child(3) span { color: #718096; font-size: 10px; }
+app-envios .shipment-action>a { color: #0c7bdd; font-size: 11px; font-weight: 800; text-decoration: none; }
+app-envios .shipment-main .payment-detail { margin-top: 3px; color: #0c7bdd; font-size: 10px; font-weight: 700; }
+
+@media (max-width: 760px) {
+  body { font-size: 12px; }
+  h1, .page-title { font-size: 22px !important; line-height: 1.15; }
+  h2 { font-size: 17px !important; }
+  p, .page-subtitle { font-size: 12px !important; }
+  .page-header { flex-direction: column; gap: 12px; }
+  .page-header button, .page-header .primary-action { width: 100%; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-card { padding: 10px; gap: 8px; border-radius: 10px; }
+  .kpi-icon { width: 36px; height: 36px; }
+  .kpi-icon ion-icon { font-size: 22px; }
+  .kpi-content span { margin-bottom: 5px; font-size: 11px; }
+  .kpi-content strong { font-size: 20px; }
+  .kpi-content small { margin-top: 4px; font-size: 10px; }
+  .filters-row { align-items: stretch; flex-direction: column; }
+  .table-card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .smart-table { min-width: 560px; }
+  .smart-table th { padding: 10px 8px; font-size: 10px; }
+  .smart-table td { padding: 10px 8px; font-size: 11px; }
+  .smart-button { min-height: 40px; height: 40px; padding: 0 14px; font-size: 12px; }
+  .smart-input, .smart-select { height: 42px; padding: 0 11px; }
+  app-transportistas .carrier-form>div, app-rutas .route-form>div { grid-template-columns: 1fr; }
+  app-pedidos .flow-strip { padding: 11px 10px; border-radius: 10px; overflow-x: auto; }
+  app-pedidos .flow-strip i { min-width: 15px; margin: 0 5px; }
+  app-pedidos .flow-step { min-width: max-content; gap: 5px; font-size: 10px; }
+  app-pedidos .flow-step b { width: 25px; height: 25px; }
+  app-pedidos .panel { padding: 14px; }
+  app-pedidos .form-grid { gap: 10px; }
+  app-pedidos .form-grid input, app-pedidos .form-grid select { padding: 9px; }
+  app-pedidos .inventory-row { padding: 8px 0; }
+  app-pedidos .orders-table { overflow-x: auto; }
+  app-pedidos table { min-width: 570px; }
+  app-envios .summary { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  app-envios .summary article, app-envios .shipments { padding: 12px; }
+  app-envios .summary strong { font-size: 20px; }
+  app-envios .shipment-card, app-envios .order-shipment {
+    min-width: 0;
+    grid-template-columns: 34px 1fr !important;
+    gap: 7px !important;
+    padding: 11px 2px !important;
+  }
+  app-envios .truck { width: 31px; height: 31px; }
+  app-envios .shipment-card > div:nth-child(n+3), app-envios .shipment-card .status {
+    margin-left: 41px !important;
+    grid-column: 1 / -1;
+  }
+  app-envios .shipment-action { align-items: stretch; }
+  app-envios .shipment-action button { min-height: 40px; }
+  app-pagos .metrics, app-inventario .metrics { grid-template-columns: repeat(3, 1fr); gap: 7px; }
+  app-pagos .metrics article, app-inventario .metrics article { padding: 10px; }
+  app-pagos .metrics strong, app-inventario .metrics strong { font-size: 18px; }
+  app-pagos .panel, app-inventario .table-panel { padding: 12px; }
+  app-pagos table, app-inventario table { min-width: 590px; }
+  app-clientes .page-header, app-bodegas .page-header, app-productos .page-header { padding: 12px 10px 6px; }
+  app-clientes .actions, app-bodegas .actions { padding: 6px 10px 10px; }
+  app-clientes .cards-grid, app-bodegas .cards-grid { grid-template-columns: 1fr; gap: 9px; padding: 0 10px 15px; }
+  app-productos .productos-shell { padding: 10px; }
+  app-productos .products-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
+  app-productos .image-box { height: 105px; }
+  app-productos ion-card-header, app-productos ion-card-content { padding: 10px; }
+
+  /* Estas vistas no usan ion-content: en Android necesitan su propio viewport
+     desplazable dentro del ion-router-outlet. */
+  app-dashboard.ion-page:not(.ion-page-hidden),
+  app-inventario.ion-page:not(.ion-page-hidden),
+  app-envios.ion-page:not(.ion-page-hidden),
+  app-transportistas.ion-page:not(.ion-page-hidden),
+  app-rutas.ion-page:not(.ion-page-hidden) {
+    display: block !important;
+    position: relative !important;
+    width: 100% !important;
+    height: calc(100dvh - 96px - env(safe-area-inset-top)) !important;
+    min-height: 0 !important;
+    padding-bottom: calc(36px + env(safe-area-inset-bottom));
+    overflow-x: hidden !important;
+    overflow-y: scroll !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y;
+    contain: none !important;
+  }
+
+  app-dashboard.ion-page:not(.ion-page-hidden) > section,
+  app-inventario.ion-page:not(.ion-page-hidden) > section,
+  app-envios.ion-page:not(.ion-page-hidden) > section,
+  app-transportistas.ion-page:not(.ion-page-hidden) > section,
+  app-rutas.ion-page:not(.ion-page-hidden) > section {
+    min-height: calc(100% + 1px);
+    padding-bottom: 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+}
